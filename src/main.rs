@@ -521,16 +521,42 @@ impl Agent {
 
 // ───── Main ─────
 
+/// 2026-06-15:Panic hook 写文件(Windows release 模式不会弹窗,
+/// 崩溃时这里能看到 backtrace + 错误,跟 stdout 一份)
+fn install_panic_log() {
+    let exe = std::env::current_exe().ok();
+    let log_path = exe
+        .as_ref()
+        .and_then(|p| p.parent())
+        .map(|d| d.join("perspective-agent-panic.log"))
+        .unwrap_or_else(|| std::path::PathBuf::from("perspective-agent-panic.log"));
+    std::panic::set_hook(Box::new(move |info| {
+        let msg = format!(
+            "[{}] PANIC: {}\nbacktrace:\n{}\n",
+            chrono::Utc::now().to_rfc3339(),
+            info,
+            std::backtrace::Backtrace::capture()
+        );
+        let _ = std::fs::write(&log_path, &msg);
+        eprintln!("{msg}");
+    }));
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    install_panic_log();
+
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info,perspective_agent=debug")),
         )
         .init();
 
     info!("perspective-agent starting...");
+    info!("exe path: {:?}", std::env::current_exe().ok());
+    info!("cwd: {:?}", std::env::current_dir().ok());
+    info!("args: {:?}", std::env::args().collect::<Vec<_>>());
 
     let agent = Agent::default();
     let service = StreamableHttpService::new(
