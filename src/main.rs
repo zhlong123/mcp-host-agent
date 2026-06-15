@@ -530,7 +530,7 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    info!("🚀 perspective-agent starting...");
+    info!("perspective-agent starting...");
 
     let agent = Agent::default();
     let service = StreamableHttpService::new(
@@ -539,14 +539,22 @@ async fn main() -> Result<()> {
         Default::default(),
     );
 
+    // 2026-06-15:绑 0.0.0.0(Y 路径),允许 LAN / 穿透访问
+    // ⚠️ 当前版本**不**做鉴权 — rmcp 0.3.2 client transport 没暴露 auth_header 配置项,
+    // 简单方案是依赖网络隔离(LAN / VPN / frp 自带鉴权 / 防火墙)。
+    // 想加 token 鉴权得换 rmcp 版本或自己实现 MCP HTTP client(reqwest + JSON-RPC)。
+    // AGENT_TOKEN env 保留语义但暂未强制校验。
+    if let Ok(token) = std::env::var("AGENT_TOKEN") {
+        info!("AGENT_TOKEN is set (length {}) but not enforced — v1 limitation", token.len());
+    }
+
     let app = axum::Router::new().nest_service("/mcp", service);
 
-    // 本机版绑 127.0.0.1(Y 路径改 0.0.0.0 + 鉴权)
     let port: u16 = std::env::var("AGENT_PORT")
         .ok()
         .and_then(|s| s.parse().ok())
         .unwrap_or(9876);
-    let addr: SocketAddr = format!("127.0.0.1:{port}").parse()?;
+    let addr: SocketAddr = format!("0.0.0.0:{port}").parse()?;
     info!("MCP server listening on http://{addr}/mcp");
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
