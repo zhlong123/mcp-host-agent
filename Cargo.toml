@@ -1,0 +1,43 @@
+[package]
+name = "perspective-agent"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Perspective Agent — 本机 MCP server,暴露文件 / git 工具给 Perspective server"
+
+[dependencies]
+# MCP server (rust 官方 SDK,内置 schemars 重导出)
+rmcp = { version = "0.3", features = ["server", "macros", "transport-streamable-http-server", "transport-worker", "schemars"] }
+
+# HTTP / async
+axum = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+hyper = { workspace = true }
+async-trait = { workspace = true }
+futures = { workspace = true }
+
+# 序列化
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# 错误
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# 日志
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# 系统 tray(v1.5 简化版:tray-icon 需要 GTK/pango 系统依赖,Linux dev 环境没装,先注释)
+# tray-icon = "0.21"
+
+# 路径 / 文件
+which = { workspace = true }
+
+# 工具
+uuid = { workspace = true }
+chrono = { workspace = true }
+rand = "0.8"
+base64 = "0.22"
