@@ -574,7 +574,8 @@ async fn main() -> Result<()> {
         info!("AGENT_TOKEN is set (length {}) but not enforced — v1 limitation", token.len());
     }
 
-    let app = axum::Router::new().nest_service("/mcp", service);
+    let app = axum::Router::new().nest_service("/mcp", service)
+        .layer(tower_http::trace::TraceLayer::new_for_http());
 
     let port: u16 = std::env::var("AGENT_PORT")
         .ok()
