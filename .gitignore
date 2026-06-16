@@ -1,0 +1,13 @@
+/target/
+**/*.rs.bk
+*.pdb
+*.swp
+.DS_Store
+
+# 编辑器 / OS
+.vscode/
+.idea/
+
+# 本地 build artifacts
+*.log
+panic-*.log

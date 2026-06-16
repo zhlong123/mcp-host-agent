@@ -1,17 +1,48 @@
 # Perspective Agent (Windows / Linux / macOS)
 
+> **Status: standalone**(2026-06-16 抽出)
+> 原是 [Perspective](http://localhost:8929/zhlong/perspective) 仓库的 `crates/agent` member(2026-06-15 ship 远端 Desktop Agent 后判定零耦合,拆出独立 repo)。
+> 历史通过 `git subtree split` 完整保留,6 commits 追溯可查。
+>
+> **Backward contract**:与 Perspective server 之间只通过 MCP JSON-RPC over HTTP 通信,**4 个 tool 协议名 + schema 是唯一耦合**(见下面"工具协议契约"段)。改协议必须双边同 PR。
+
 本机 MCP server,暴露文件 / git 工具给 Perspective server 通过 `agent://local/...` 或 `agent://<name>/...` URL。
+
+## Build
+
+需要 Rust 1.75+ 和 cargo。
+
+### Linux / macOS(本机)
+
+```bash
+cargo build --release
+# 产物:target/release/perspective-agent
+```
+
+### Windows(mingw cross from Linux,zhlong 当前用的链路)
+
+```bash
+# 装一次 target
+rustup target add x86_64-pc-windows-gnu
+
+# 需要 mingw-w64(Arch: pacman -S mingw-w64-gcc,Debian/Ubuntu: apt install gcc-mingw-w64-x86-64)
+cargo build --release --target x86_64-pc-windows-gnu
+# 产物:target/x86_64-pc-windows-gnu/release/perspective-agent.exe
+```
+
+产物在 `target/<target-triple>/release/perspective-agent[.exe]`,**纯 Rust 单文件,无 Python / Node / DLL 依赖**。
 
 ## 装/跑
 
-直接运行二进制,**无任何依赖**(纯 Rust 单文件,无 Python / Node / DLL):
+直接运行二进制:
 
 ```bash
 # 默认绑 0.0.0.0:9876(允许 LAN / 穿透访问)
-perspective-agent.exe
+./perspective-agent           # Linux/macOS
+perspective-agent.exe         # Windows
 
 # 自定义端口
-AGENT_PORT=9999 perspective-agent.exe
+AGENT_PORT=9999 ./perspective-agent
 ```
 
 agent 启动后会:
@@ -42,6 +73,19 @@ agent 暴露 7 个 MCP 工具:
 | `stat` | 文件元信息 |
 | `git_status` | git 探测(branch / uncommitted / ahead / last_commit) |
 | `git_diff` | git diff(可选 --staged) |
+
+## 工具协议契约(与 Perspective server 唯一耦合)
+
+改本表任意字段必须**同 PR 改 server 端 `crates/server/src/agent_dispatch.rs`**。
+
+| Tool | 入参 | 返回 |
+|------|------|------|
+| `git_status` | `{path}` | `{is_git, branch?, uncommitted, ahead, behind, last_commit?, error?}` |
+| `list_dir` | `{path, recursive, max_depth}` | `{entries: [{name, kind, size_bytes}], total}` |
+| `read_file` | `{path}` | `{content_b64, size_bytes}` |
+| `write_file` | `{path, content_b64, if_mtime_unix_ms?}` | `null`/空 |
+
+`ping` / `stat` / `git_diff` 三个工具是本地 utility,server 不调。
 
 ## 路径约定
 
@@ -76,8 +120,8 @@ curl -X POST http://127.0.0.1:9876/mcp \
 
 ## 升级
 
-下个版本直接覆盖 exe 即可,agent 无状态(每次启动从 server 那边 DB 读配置)。
+下个版本直接覆盖 binary 即可,agent 无状态(每次启动从 server 那边 DB 读配置)。
 
 ## 反馈
 
-bug 提在 Gitea: http://localhost:8929/zhlong/perspective/issues
+bug 提在 Gitea: http://localhost:8929/zhlong/perspective-agent/issues

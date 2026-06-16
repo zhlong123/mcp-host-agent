@@ -1,8 +1,54 @@
+[workspace]
+# 2026-06-16:本 repo 是单 crate 既是 root crate 又是 workspace root,
+# 保留原 perspective workspace 里 { workspace = true } 的引用方式,避免展平 20+ 个 dep
+resolver = "2"
+members = ["."]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+
+[workspace.dependencies]
+# 异步运行时
+tokio = { version = "1.40", features = ["full"] }
+async-trait = "0.1"
+async-stream = "0.3"
+futures = "0.3"
+tokio-stream = "0.1"
+
+# HTTP
+axum = { version = "0.7" }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace"] }
+hyper = "1.4"
+
+# 序列化
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# 错误
+anyhow = "1"
+thiserror = "1"
+
+# 日志
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# 工具
+uuid = { version = "1.10", features = ["v4", "serde"] }
+which = "7"
+chrono = { version = "0.4", features = ["serde"] }
+base64 = "0.22"
+rand = "0.8"
+
 [package]
 name = "perspective-agent"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+rust-version.workspace = true
 description = "Perspective Agent — 本机 MCP server,暴露文件 / git 工具给 Perspective server"
 
 [dependencies]
@@ -39,5 +85,5 @@ which = { workspace = true }
 # 工具
 uuid = { workspace = true }
 chrono = { workspace = true }
-rand = "0.8"
-base64 = "0.22"
+rand = { workspace = true }
+base64 = { workspace = true }
