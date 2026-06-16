@@ -26,21 +26,30 @@ function miBToBytes(mib) {
   return Math.max(1, Math.round(Number(mib) * MIB));
 }
 
+async function copyText(id) {
+  const el = document.getElementById(id);
+  const text = el?.textContent?.trim();
+  if (!text || text === "—") return;
+  await navigator.clipboard.writeText(text);
+  toast("已复制到剪贴板");
+}
+
 function renderRoots() {
   const el = document.getElementById("rootsList");
   el.innerHTML = "";
   if (!roots.length) {
-    el.innerHTML = '<p class="hint">（未配置 — 允许所有路径，穿透时不安全）</p>';
+    el.innerHTML =
+      '<p class="empty-hint">未配置沙箱 — 允许所有路径（穿透场景不安全）</p>';
     return;
   }
   roots.forEach((r, i) => {
     const div = document.createElement("div");
     div.className = "root-item";
     div.innerHTML = `
-      <input data-i="${i}" data-f="name" value="${escapeHtml(r.name)}" placeholder="名称" />
-      <input data-i="${i}" data-f="path" value="${escapeHtml(r.path)}" placeholder="D:/Projects/foo" />
-      <button class="btn secondary" data-pick="${i}">浏览…</button>
-      <button class="btn danger" data-del="${i}">删除</button>`;
+      <input data-i="${i}" data-f="name" value="${escapeHtml(r.name)}" placeholder="名称" aria-label="目录名称" />
+      <input data-i="${i}" data-f="path" value="${escapeHtml(r.path)}" placeholder="D:/Projects/foo" aria-label="目录路径" />
+      <button class="btn btn-ghost btn-sm" data-pick="${i}" type="button">浏览</button>
+      <button class="btn btn-outline btn-sm" data-del="${i}" type="button">删除</button>`;
     el.appendChild(div);
   });
 
@@ -140,16 +149,19 @@ async function refresh() {
     document.getElementById("configPath").textContent = s.config_path;
     const dot = document.getElementById("statusDot");
     const txt = document.getElementById("statusText");
+    const badge = document.getElementById("statusBadge");
     if (s.online) {
       dot.classList.add("ok");
-      txt.textContent = "ONLINE";
+      txt.textContent = "Online";
+      badge.style.borderColor = "rgba(46, 204, 113, 0.35)";
     } else {
       dot.classList.remove("ok");
-      txt.textContent = "OFFLINE";
+      txt.textContent = "Offline";
+      badge.style.borderColor = "";
     }
     const logs = await invoke("get_audit_logs");
     document.getElementById("auditLogView").textContent =
-      logs.join("\n") || "(暂无记录)";
+      logs.join("\n") || "— 暂无审计记录 —";
   } catch (e) {
     toast("刷新失败: " + e);
   }
@@ -160,7 +172,7 @@ async function saveConfig() {
     collectRoots();
     const c = await invoke("get_config");
     await invoke("save_config", { config: collectConfig(c) });
-    toast("配置已保存（部分项需重启 MCP 服务）");
+    toast("配置已保存");
     await refresh();
     await loadConfig();
   } catch (e) {
@@ -168,13 +180,11 @@ async function saveConfig() {
   }
 }
 
-document.getElementById("mcpUrl").onclick = async () => {
-  const t = document.getElementById("mcpUrl").textContent;
-  if (t && t !== "—") {
-    await navigator.clipboard.writeText(t);
-    toast("MCP 地址已复制");
-  }
-};
+document.querySelectorAll("[data-copy]").forEach((btn) => {
+  btn.addEventListener("click", () => copyText(btn.dataset.copy));
+});
+
+document.getElementById("mcpUrl").onclick = () => copyText("mcpUrl");
 
 document.getElementById("btnStart").onclick = async () => {
   try {

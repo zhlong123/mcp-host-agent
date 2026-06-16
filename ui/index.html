@@ -4,107 +4,159 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Perspective Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="wrap">
-      <header>
-        <div>
-          <h1>Perspective Agent</h1>
-          <p>本机 MCP 服务 · 请在本窗口管理（不是浏览器网页）</p>
+    <div class="app">
+      <div class="grid-bg" aria-hidden="true"></div>
+
+      <header class="masthead">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">PA</div>
+          <div>
+            <h1>Perspective Agent</h1>
+            <p class="brand-sub">本机 MCP 控制面板</p>
+          </div>
         </div>
-        <div class="badge" id="statusBadge">
-          <span class="dot" id="statusDot"></span>
-          <span id="statusText">检测中…</span>
+        <div class="status-pill" id="statusBadge">
+          <span class="pulse" id="statusDot"></span>
+          <span id="statusText">检测中</span>
         </div>
       </header>
 
-      <div class="grid">
-        <section class="card">
-          <h2>连接</h2>
-          <label>MCP 地址（填到 Perspective 远端 Agent）</label>
-          <div class="url-box" id="mcpUrl" title="点击复制">—</div>
-          <label>本机 MCP 地址</label>
-          <div class="url-box mono" id="localMcpUrl">—</div>
-          <label>健康检查</label>
-          <div class="url-box mono" id="healthUrl">—</div>
-          <p class="hint warn">只需运行本程序。MCP 服务内嵌在进程内，不会再弹出 perspective-agent.exe。</p>
-          <p class="hint" id="statusDetail"></p>
-          <div class="btns">
-            <button class="btn primary" id="btnStart">启动服务</button>
-            <button class="btn danger" id="btnStop">停止服务</button>
-            <button class="btn secondary" id="btnRefresh">刷新</button>
+      <section class="hero">
+        <div class="hero-top">
+          <span class="section-tag">Status</span>
+          <p class="hero-detail" id="statusDetail">正在连接…</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn btn-accent" id="btnStart">启动服务</button>
+          <button class="btn btn-outline" id="btnStop">停止</button>
+          <button class="btn btn-ghost" id="btnRefresh">刷新</button>
+        </div>
+        <p class="callout">MCP 内嵌在本进程，无需单独运行 perspective-agent.exe</p>
+      </section>
+
+      <main class="layout">
+        <section class="panel panel-span-2">
+          <div class="panel-head">
+            <span class="section-num">01</span>
+            <h2>连接端点</h2>
+          </div>
+          <div class="endpoint-list">
+            <div class="endpoint">
+              <div class="endpoint-meta">
+                <span class="endpoint-label">Perspective 远端 URL</span>
+                <button class="copy-btn" data-copy="mcpUrl" type="button">复制</button>
+              </div>
+              <code class="endpoint-value copyable" id="mcpUrl" title="点击复制">—</code>
+            </div>
+            <div class="endpoint">
+              <div class="endpoint-meta">
+                <span class="endpoint-label">本机 MCP</span>
+                <button class="copy-btn" data-copy="localMcpUrl" type="button">复制</button>
+              </div>
+              <code class="endpoint-value" id="localMcpUrl">—</code>
+            </div>
+            <div class="endpoint">
+              <div class="endpoint-meta">
+                <span class="endpoint-label">Health</span>
+                <button class="copy-btn" data-copy="healthUrl" type="button">复制</button>
+              </div>
+              <code class="endpoint-value" id="healthUrl">—</code>
+            </div>
           </div>
         </section>
 
-        <section class="card">
-          <h2>网络</h2>
-          <div class="field">
-            <label>端口</label>
-            <input id="port" type="number" min="1" max="65535" />
+        <section class="panel">
+          <div class="panel-head">
+            <span class="section-num">02</span>
+            <h2>网络</h2>
           </div>
-          <div class="field">
-            <label>绑定地址</label>
-            <input id="bind" placeholder="0.0.0.0" />
-          </div>
-          <div class="field">
-            <label>Bearer Token（留空=不鉴权）</label>
-            <input id="token" type="password" placeholder="可选" autocomplete="off" />
-          </div>
-          <div class="field">
-            <label>穿透/公网 MCP URL（可选，填 frp 地址）</label>
-            <input id="publicMcpUrl" placeholder="http://your-host:9876/mcp" />
-          </div>
-          <div class="field">
-            <label>审计日志路径</label>
-            <input id="auditLogPath" placeholder="perspective-agent-audit.log（默认在 exe 旁）" />
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">端口</span>
+              <input id="port" type="number" min="1" max="65535" />
+            </label>
+            <label class="field">
+              <span class="field-label">绑定</span>
+              <input id="bind" placeholder="0.0.0.0" />
+            </label>
+            <label class="field field-span-2">
+              <span class="field-label">Bearer Token</span>
+              <input id="token" type="password" placeholder="留空 = 不鉴权" autocomplete="off" />
+            </label>
+            <label class="field field-span-2">
+              <span class="field-label">穿透 / 公网 MCP</span>
+              <input id="publicMcpUrl" placeholder="http://your-host:9876/mcp" />
+            </label>
+            <label class="field field-span-2">
+              <span class="field-label">审计日志路径</span>
+              <input id="auditLogPath" placeholder="perspective-agent-audit.log" />
+            </label>
           </div>
         </section>
 
-        <section class="card full">
-          <h2>限额 [limits]</h2>
+        <section class="panel">
+          <div class="panel-head">
+            <span class="section-num">03</span>
+            <h2>限额</h2>
+          </div>
           <div class="limits-grid">
-            <div class="field">
-              <label>单文件读取上限 (MiB)</label>
+            <label class="field">
+              <span class="field-label">读取 MiB</span>
               <input id="maxReadMiB" type="number" min="1" step="1" />
-            </div>
-            <div class="field">
-              <label>单文件写入上限 (MiB)</label>
+            </label>
+            <label class="field">
+              <span class="field-label">写入 MiB</span>
               <input id="maxWriteMiB" type="number" min="1" step="1" />
-            </div>
-            <div class="field">
-              <label>目录列表最大条目</label>
+            </label>
+            <label class="field">
+              <span class="field-label">列表条目</span>
               <input id="maxListEntries" type="number" min="1" step="1" />
-            </div>
-            <div class="field">
-              <label>目录递归最大深度</label>
+            </label>
+            <label class="field">
+              <span class="field-label">递归深度</span>
               <input id="maxListDepth" type="number" min="0" step="1" />
-            </div>
-            <div class="field">
-              <label>git diff 最大 (MiB)</label>
+            </label>
+            <label class="field">
+              <span class="field-label">Git diff MiB</span>
               <input id="maxGitDiffMiB" type="number" min="1" step="1" />
-            </div>
+            </label>
           </div>
-          <p class="hint">修改限额后需重启 MCP 服务才生效。</p>
+          <p class="footnote">修改限额后需重启 MCP 服务</p>
         </section>
 
-        <section class="card full">
-          <h2>允许的项目目录（沙箱）</h2>
+        <section class="panel panel-span-2">
+          <div class="panel-head">
+            <span class="section-num">04</span>
+            <h2>沙箱目录</h2>
+            <button class="btn btn-ghost btn-sm" id="btnAddRoot" type="button">+ 添加</button>
+          </div>
           <div class="roots-list" id="rootsList"></div>
-          <div class="btns">
-            <button class="btn secondary" id="btnAddRoot">+ 添加目录</button>
-            <button class="btn primary" id="btnSave">保存配置</button>
+          <div class="panel-foot">
+            <button class="btn btn-accent" id="btnSave" type="button">保存配置</button>
+            <span class="config-path">配置 · <code id="configPath">—</code></span>
           </div>
-          <p class="hint">配置文件：<span id="configPath">—</span></p>
         </section>
 
-        <section class="card full">
-          <h2>审计日志</h2>
-          <pre class="log" id="auditLogView">加载中…</pre>
+        <section class="panel panel-span-2">
+          <div class="panel-head">
+            <span class="section-num">05</span>
+            <h2>审计日志</h2>
+          </div>
+          <pre class="terminal" id="auditLogView">加载中…</pre>
         </section>
-      </div>
+      </main>
     </div>
-    <div class="toast" id="toast"></div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script type="module" src="/main.js"></script>
   </body>
 </html>
