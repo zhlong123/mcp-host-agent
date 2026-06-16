@@ -25,7 +25,10 @@ pub struct StatusResponse {
     pub detail: String,
     pub version: Option<String>,
     pub git_available: Option<bool>,
+    /// URL to paste into Perspective (public_mcp_url if set, else local)
     pub mcp_url: String,
+    pub local_mcp_url: String,
+    pub public_mcp_url: Option<String>,
     pub health_url: String,
     pub config_path: String,
     pub managed_server: bool,
@@ -64,17 +67,30 @@ impl Manager {
         } else {
             cfg.bind.clone()
         };
-        let mcp_url = format!("http://{host}:{}/mcp", cfg.port);
+        let local_mcp_url = format!("http://{host}:{}/mcp", cfg.port);
+        let mcp_url = cfg
+            .public_mcp_url
+            .clone()
+            .unwrap_or_else(|| local_mcp_url.clone());
         let health_url = format!("http://127.0.0.1:{}/health", cfg.port);
         let managed = self.inner.server_child.lock().unwrap().is_some();
 
         if let Some(h) = probe_health(cfg.port) {
             StatusResponse {
                 online: true,
-                detail: format!("v{} · git={} · {} roots", h.version, h.git_available, h.roots.len()),
+                detail: format!(
+                    "v{} · git={} · {} roots · read={}MiB write={}MiB",
+                    h.version,
+                    h.git_available,
+                    h.roots.len(),
+                    cfg.limits.max_read_bytes / (1024 * 1024),
+                    cfg.limits.max_write_bytes / (1024 * 1024),
+                ),
                 version: Some(h.version),
                 git_available: Some(h.git_available),
                 mcp_url,
+                local_mcp_url,
+                public_mcp_url: cfg.public_mcp_url.clone(),
                 health_url,
                 config_path: self.config_path.display().to_string(),
                 managed_server: managed,
@@ -86,6 +102,8 @@ impl Manager {
                 version: None,
                 git_available: None,
                 mcp_url,
+                local_mcp_url,
+                public_mcp_url: cfg.public_mcp_url.clone(),
                 health_url,
                 config_path: self.config_path.display().to_string(),
                 managed_server: managed,

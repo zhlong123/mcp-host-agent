@@ -60,6 +60,9 @@ pub struct FileConfig {
     pub token: Option<String>,
     #[serde(default)]
     pub audit_log: Option<PathBuf>,
+    /// URL shown to user for Perspective remote agent (e.g. frp tunnel). Local MCP URL is always computed from bind/port.
+    #[serde(default)]
+    pub public_mcp_url: Option<String>,
     #[serde(default)]
     pub limits: LimitsConfig,
     #[serde(default)]
@@ -80,6 +83,7 @@ impl Default for FileConfig {
             bind: default_bind(),
             token: None,
             audit_log: None,
+            public_mcp_url: None,
             limits: LimitsConfig::default(),
             roots: Vec::new(),
         }
@@ -92,14 +96,23 @@ pub struct RuntimeConfig {
     pub bind: String,
     pub token: Option<String>,
     pub audit_log: Option<PathBuf>,
+    pub public_mcp_url: Option<String>,
     pub limits: LimitsConfig,
     pub roots: Vec<RootEntry>,
     pub config_path: Option<PathBuf>,
 }
 
 pub fn load_config(cli: &CliArgs) -> Result<RuntimeConfig> {
-    let mut cfg = if let Some(path) = &cli.config {
-        load_file(path)?
+    let mut cfg =     if let Some(path) = &cli.config {
+        if path.exists() {
+            load_file(path)?
+        } else {
+            tracing::warn!(
+                "config file {} not found — using defaults (save from desktop app to create)",
+                path.display()
+            );
+            FileConfig::default()
+        }
     } else if Path::new("agent.toml").exists() {
         load_file("agent.toml")?
     } else if let Ok(exe) = std::env::current_exe() {
@@ -168,6 +181,7 @@ pub fn load_config(cli: &CliArgs) -> Result<RuntimeConfig> {
         bind: cfg.bind,
         token: cfg.token,
         audit_log: cfg.audit_log,
+        public_mcp_url: cfg.public_mcp_url,
         limits: cfg.limits,
         roots: cfg.roots,
         config_path,
@@ -198,6 +212,7 @@ pub fn save_config(path: &Path, cfg: &RuntimeConfig) -> Result<()> {
         bind: cfg.bind.clone(),
         token: cfg.token.clone(),
         audit_log: cfg.audit_log.clone(),
+        public_mcp_url: cfg.public_mcp_url.clone(),
         limits: cfg.limits.clone(),
         roots: cfg.roots.clone(),
     };
@@ -262,6 +277,33 @@ pub fn load_config_default() -> Result<RuntimeConfig> {
 }
 
 pub fn validate_config(cfg: &RuntimeConfig) -> Result<()> {
+    if cfg.port == 0 {
+        bail!("port must be between 1 and 65535");
+    }
+    if cfg.bind.trim().is_empty() {
+        bail!("bind must not be empty");
+    }
+    if let Some(url) = &cfg.public_mcp_url {
+        if url.trim().is_empty() {
+            bail!("public_mcp_url must not be empty when set");
+        }
+        if !url.starts_with("http://") && !url.starts_with("https://") {
+            bail!("public_mcp_url must start with http:// or https://");
+        }
+    }
+    let l = &cfg.limits;
+    if l.max_read_bytes == 0 {
+        bail!("limits.max_read_bytes must be > 0");
+    }
+    if l.max_write_bytes == 0 {
+        bail!("limits.max_write_bytes must be > 0");
+    }
+    if l.max_list_entries == 0 {
+        bail!("limits.max_list_entries must be > 0");
+    }
+    if l.max_git_diff_bytes == 0 {
+        bail!("limits.max_git_diff_bytes must be > 0");
+    }
     if cfg.roots.is_empty() {
         tracing::warn!(
             "no AGENT_ROOT / [[roots]] configured — all paths allowed (unsafe for tunnel/public exposure)"

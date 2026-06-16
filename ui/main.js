@@ -2,6 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 
 let roots = [];
 
+const MIB = 1024 * 1024;
+
 function toast(msg) {
   const el = document.getElementById("toast");
   el.textContent = msg;
@@ -14,6 +16,14 @@ function escapeHtml(s) {
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;");
+}
+
+function bytesToMiB(bytes) {
+  return Math.max(1, Math.round(bytes / MIB));
+}
+
+function miBToBytes(mib) {
+  return Math.max(1, Math.round(Number(mib) * MIB));
 }
 
 function renderRoots() {
@@ -71,11 +81,47 @@ function collectRoots() {
   roots = Object.values(map).filter((r) => r.name || r.path);
 }
 
+function fillLimits(limits) {
+  document.getElementById("maxReadMiB").value = bytesToMiB(limits.max_read_bytes);
+  document.getElementById("maxWriteMiB").value = bytesToMiB(limits.max_write_bytes);
+  document.getElementById("maxListEntries").value = limits.max_list_entries;
+  document.getElementById("maxListDepth").value = limits.max_list_depth;
+  document.getElementById("maxGitDiffMiB").value = bytesToMiB(limits.max_git_diff_bytes);
+}
+
+function collectLimits() {
+  return {
+    max_read_bytes: miBToBytes(document.getElementById("maxReadMiB").value),
+    max_write_bytes: miBToBytes(document.getElementById("maxWriteMiB").value),
+    max_list_entries: +document.getElementById("maxListEntries").value,
+    max_list_depth: +document.getElementById("maxListDepth").value,
+    max_git_diff_bytes: miBToBytes(document.getElementById("maxGitDiffMiB").value),
+  };
+}
+
+function collectConfig(c) {
+  const publicUrl = document.getElementById("publicMcpUrl").value.trim();
+  const auditLog = document.getElementById("auditLogPath").value.trim();
+  return {
+    port: +document.getElementById("port").value,
+    bind: document.getElementById("bind").value,
+    token: document.getElementById("token").value || null,
+    public_mcp_url: publicUrl || null,
+    audit_log: auditLog || null,
+    roots: roots.map((r) => ({ name: r.name, path: r.path })),
+    limits: collectLimits(),
+    config_path: c.config_path,
+  };
+}
+
 async function loadConfig() {
   const c = await invoke("get_config");
   document.getElementById("port").value = c.port;
   document.getElementById("bind").value = c.bind;
   document.getElementById("token").value = c.token || "";
+  document.getElementById("publicMcpUrl").value = c.public_mcp_url || "";
+  document.getElementById("auditLogPath").value = c.audit_log || "";
+  fillLimits(c.limits);
   roots = (c.roots || []).map((r) => ({
     name: r.name,
     path: typeof r.path === "string" ? r.path : String(r.path),
@@ -88,6 +134,7 @@ async function refresh() {
   try {
     const s = await invoke("get_status");
     document.getElementById("mcpUrl").textContent = s.mcp_url;
+    document.getElementById("localMcpUrl").textContent = s.local_mcp_url;
     document.getElementById("healthUrl").textContent = s.health_url;
     document.getElementById("statusDetail").textContent = s.detail;
     document.getElementById("configPath").textContent = s.config_path;
@@ -101,7 +148,7 @@ async function refresh() {
       txt.textContent = "OFFLINE";
     }
     const logs = await invoke("get_audit_logs");
-    document.getElementById("auditLog").textContent =
+    document.getElementById("auditLogView").textContent =
       logs.join("\n") || "(暂无记录)";
   } catch (e) {
     toast("刷新失败: " + e);
@@ -112,19 +159,10 @@ async function saveConfig() {
   try {
     collectRoots();
     const c = await invoke("get_config");
-    await invoke("save_config", {
-      config: {
-        port: +document.getElementById("port").value,
-        bind: document.getElementById("bind").value,
-        token: document.getElementById("token").value || null,
-        roots: roots.map((r) => ({ name: r.name, path: r.path })),
-        limits: c.limits,
-        audit_log: c.audit_log,
-        config_path: c.config_path,
-      },
-    });
-    toast("配置已保存");
+    await invoke("save_config", { config: collectConfig(c) });
+    toast("配置已保存（部分项需重启 MCP 服务）");
     await refresh();
+    await loadConfig();
   } catch (e) {
     toast("保存失败: " + e);
   }

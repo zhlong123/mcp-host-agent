@@ -26,7 +26,6 @@
   "bundle": {
     "active": true,
     "targets": [],
-    "externalBin": ["bin/perspective-agent"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

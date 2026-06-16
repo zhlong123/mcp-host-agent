@@ -562,6 +562,58 @@ async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> {
     })
 }
 
+async fn index(State(state): State<Arc<AppState>>) -> axum::response::Html<String> {
+    let port = state.config.port;
+    let roots = state
+        .canon_roots
+        .iter()
+        .map(|(n, p)| format!("<li><code>{n}</code> → {}</li>", html_escape(&p.display().to_string())))
+        .collect::<String>();
+    let roots_html = if roots.is_empty() {
+        "<li>（未配置沙箱，允许全部路径）</li>".to_string()
+    } else {
+        roots
+    };
+    axum::response::Html(format!(
+        r#"<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Perspective Agent</title>
+<style>
+body{{font-family:Segoe UI,sans-serif;background:#0f1419;color:#e8eef7;margin:0;padding:32px;line-height:1.6}}
+.card{{max-width:720px;background:#1a2332;border:1px solid #2d3f58;border-radius:12px;padding:24px}}
+.ok{{color:#34d399}} code{{background:#243044;padding:2px 6px;border-radius:4px}}
+a{{color:#3d9cf5}} ul{{padding-left:20px}}
+</style></head><body>
+<div class="card">
+<h1>Perspective Agent <span class="ok">● ONLINE</span></h1>
+<p>这是 <strong>MCP 后端服务</strong>，不是图形管理页面。浏览器里只能查看本说明和探活接口。</p>
+<h2>怎么用</h2>
+<ul>
+<li><strong>图形管理</strong>：运行 <code>perspective-agent-app.exe</code>（桌面窗口）</li>
+<li><strong>探活 JSON</strong>：<a href="/health">/health</a></li>
+<li><strong>MCP 接口</strong>：<code>/mcp</code>（给 Perspective 用，浏览器直接打开会 406，属正常）</li>
+<li><strong>填到 Perspective</strong>：<code>http://127.0.0.1:{port}/mcp</code> 或穿透地址</li>
+</ul>
+<h2>当前状态</h2>
+<ul>
+<li>版本：{version}</li>
+<li>Git 工具：{git}</li>
+<li>沙箱 roots：{roots_html}</li>
+</ul>
+<p style="color:#8fa3bf;font-size:14px">Windows 请用 <code>127.0.0.1:{port}</code>，不要用 <code>localhost</code>（会走 IPv6）。图形管理请开 <code>perspective-agent-app.exe</code>。</p>
+</div></body></html>"#,
+        version = env!("CARGO_PKG_VERSION"),
+        git = if state.git_available { "可用" } else { "不可用" },
+        roots_html = roots_html,
+    ))
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
 fn default_audit_log_path() -> Option<PathBuf> {
     std::env::current_exe()
         .ok()
@@ -579,6 +631,14 @@ pub fn probe_health(port: u16) -> Option<HealthResponse> {
 }
 
 pub async fn run(cli: CliArgs) -> Result<()> {
+    let (_tx, rx) = tokio::sync::watch::channel(());
+    run_with_shutdown(cli, rx).await
+}
+
+pub async fn run_with_shutdown(
+    cli: CliArgs,
+    mut shutdown: tokio::sync::watch::Receiver<()>,
+) -> Result<()> {
     let runtime = load_config(&cli)?;
     validate_config(&runtime)?;
 
@@ -587,7 +647,8 @@ pub async fn run(cli: CliArgs) -> Result<()> {
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info,perspective_agent=debug")),
         )
-        .init();
+        .try_init()
+        .ok();
 
     if let Some(path) = &runtime.config_path {
         info!("loaded config: {}", path.display());
@@ -642,19 +703,54 @@ pub async fn run(cli: CliArgs) -> Result<()> {
         ));
 
     let app = Router::new()
+        .route("/", get(index))
         .route("/health", get(health))
         .merge(mcp_routes)
         .with_state(state);
 
-    let addr: SocketAddr = format!("{}:{}", runtime_cfg.bind, runtime_cfg.port).parse()?;
-    info!("health probe: http://{addr}/health");
-    info!("MCP endpoint: http://{addr}/mcp");
+    let make_svc = || app.clone().into_make_service_with_connect_info::<SocketAddr>();
+    let local = format!("127.0.0.1:{}", runtime_cfg.port);
+    info!("health probe: http://{local}/health");
+    info!("MCP endpoint: http://{local}/mcp");
 
-    let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .await?;
+    if runtime_cfg.bind == "0.0.0.0" {
+        let v4 = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", runtime_cfg.port)).await?;
+        info!("listening on 0.0.0.0:{} (IPv4)", runtime_cfg.port);
+        match tokio::net::TcpListener::bind(format!("[::]:{}", runtime_cfg.port)).await {
+            Ok(v6) => {
+                info!("listening on [::]:{} (IPv6 / localhost)", runtime_cfg.port);
+                let svc = make_svc();
+                let mut sd6 = shutdown.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = axum::serve(v6, svc)
+                        .with_graceful_shutdown(async move {
+                            let _ = sd6.changed().await;
+                        })
+                        .await
+                    {
+                        tracing::error!("IPv6 listener stopped: {e}");
+                    }
+                });
+            }
+            Err(e) => warn!("IPv6 bind skipped: {e}"),
+        }
+        axum::serve(v4, make_svc())
+            .with_graceful_shutdown(async move {
+                let _ = shutdown.changed().await;
+            })
+            .await?;
+    } else {
+        let listener = bind_listener(&runtime_cfg.bind, runtime_cfg.port).await?;
+        axum::serve(listener, make_svc())
+            .with_graceful_shutdown(async move {
+                let _ = shutdown.changed().await;
+            })
+            .await?;
+    }
     Ok(())
+}
+
+async fn bind_listener(bind: &str, port: u16) -> Result<tokio::net::TcpListener> {
+    let addr: SocketAddr = format!("{bind}:{port}").parse()?;
+    Ok(tokio::net::TcpListener::bind(addr).await?)
 }

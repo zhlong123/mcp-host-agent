@@ -4,11 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Perspective Agent</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -16,7 +11,7 @@
       <header>
         <div>
           <h1>Perspective Agent</h1>
-          <p>本机 MCP 服务 · 项目管理与穿透配置</p>
+          <p>本机 MCP 服务 · 请在本窗口管理（不是浏览器网页）</p>
         </div>
         <div class="badge" id="statusBadge">
           <span class="dot" id="statusDot"></span>
@@ -27,10 +22,13 @@
       <div class="grid">
         <section class="card">
           <h2>连接</h2>
-          <label>MCP 地址（Perspective 远端 Agent URL）</label>
+          <label>MCP 地址（填到 Perspective 远端 Agent）</label>
           <div class="url-box" id="mcpUrl" title="点击复制">—</div>
+          <label>本机 MCP 地址</label>
+          <div class="url-box mono" id="localMcpUrl">—</div>
           <label>健康检查</label>
           <div class="url-box mono" id="healthUrl">—</div>
+          <p class="hint warn">只需运行本程序。MCP 服务内嵌在进程内，不会再弹出 perspective-agent.exe。</p>
           <p class="hint" id="statusDetail"></p>
           <div class="btns">
             <button class="btn primary" id="btnStart">启动服务</button>
@@ -53,6 +51,41 @@
             <label>Bearer Token（留空=不鉴权）</label>
             <input id="token" type="password" placeholder="可选" autocomplete="off" />
           </div>
+          <div class="field">
+            <label>穿透/公网 MCP URL（可选，填 frp 地址）</label>
+            <input id="publicMcpUrl" placeholder="http://your-host:9876/mcp" />
+          </div>
+          <div class="field">
+            <label>审计日志路径</label>
+            <input id="auditLogPath" placeholder="perspective-agent-audit.log（默认在 exe 旁）" />
+          </div>
+        </section>
+
+        <section class="card full">
+          <h2>限额 [limits]</h2>
+          <div class="limits-grid">
+            <div class="field">
+              <label>单文件读取上限 (MiB)</label>
+              <input id="maxReadMiB" type="number" min="1" step="1" />
+            </div>
+            <div class="field">
+              <label>单文件写入上限 (MiB)</label>
+              <input id="maxWriteMiB" type="number" min="1" step="1" />
+            </div>
+            <div class="field">
+              <label>目录列表最大条目</label>
+              <input id="maxListEntries" type="number" min="1" step="1" />
+            </div>
+            <div class="field">
+              <label>目录递归最大深度</label>
+              <input id="maxListDepth" type="number" min="0" step="1" />
+            </div>
+            <div class="field">
+              <label>git diff 最大 (MiB)</label>
+              <input id="maxGitDiffMiB" type="number" min="1" step="1" />
+            </div>
+          </div>
+          <p class="hint">修改限额后需重启 MCP 服务才生效。</p>
         </section>
 
         <section class="card full">
@@ -67,7 +100,7 @@
 
         <section class="card full">
           <h2>审计日志</h2>
-          <pre class="log" id="auditLog">加载中…</pre>
+          <pre class="log" id="auditLogView">加载中…</pre>
         </section>
       </div>
     </div>
