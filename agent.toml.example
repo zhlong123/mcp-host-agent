@@ -17,6 +17,9 @@ bind = "0.0.0.0"
 # Audit log path (default: perspective-agent-audit.log next to exe)
 # audit_log = "perspective-agent-audit.log"
 
+# Structured operation log for desktop timeline (JSONL)
+# activity_log = "perspective-agent-activity.jsonl"
+
 # Public/tunnel MCP URL shown in desktop app (Perspective remote agent URL)
 # public_mcp_url = "http://your-host:9876/mcp"
 
@@ -27,6 +30,13 @@ max_write_bytes = 10485760     # 10 MiB — write_file upper bound
 max_list_entries = 10000       # list_dir max returned entries
 max_list_depth = 10            # list_dir max recursion depth
 max_git_diff_bytes = 1048576   # 1 MiB — git_diff truncation
+max_glob_results = 500         # glob max paths
+max_grep_matches = 200         # grep max lines
+max_bash_output_bytes = 1048576  # 1 MiB — bash stdout/stderr cap
+bash_timeout_secs = 30
+
+# Enable bash MCP tool (disabled by default — high risk)
+# allow_bash = true
 
 # Path sandbox: only paths under these roots are allowed.
 # If empty, all paths are allowed (unsafe for tunnel).

@@ -1,10 +1,14 @@
 //! Perspective Agent core library (MCP server + config + manager)
 
+pub mod activity;
 pub mod audit;
 pub mod config;
 pub mod manager;
 pub mod paths;
+pub mod search;
 pub mod serve;
+
+pub use activity::{ActivityEvent, ActivityLog, ActivityQuery, DiffSummary, OpKind};
 
 pub fn install_panic_log() {
     use std::path::PathBuf;

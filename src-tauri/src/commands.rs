@@ -1,4 +1,5 @@
-use crate::{stop_mcp_server, spawn_mcp_server, AppState};
+use crate::{restart_mcp_server, stop_mcp_server, spawn_mcp_server, AppState};
+use perspective_agent::activity::{ActivityEvent, ActivityQuery};
 use perspective_agent::config::RuntimeConfig;
 use perspective_agent::manager::StatusResponse;
 use std::sync::Arc;
@@ -44,8 +45,21 @@ pub fn stop_server(state: State<'_, Arc<AppState>>) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub async fn restart_server(state: State<'_, Arc<AppState>>) -> Result<String, String> {
+    restart_mcp_server(&state).await
+}
+
+#[tauri::command]
 pub fn get_audit_logs(state: State<Arc<AppState>>) -> Vec<String> {
     state.manager.audit_tail(200)
+}
+
+#[tauri::command]
+pub async fn get_activity_events(
+    state: State<'_, Arc<AppState>>,
+    query: ActivityQuery,
+) -> Result<Vec<ActivityEvent>, String> {
+    Ok(state.activity.list(query).await)
 }
 
 #[tauri::command]

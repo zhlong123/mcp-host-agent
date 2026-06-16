@@ -1,5 +1,6 @@
 mod commands;
 
+use perspective_agent::activity::{ActivityLog, default_activity_log_path};
 use perspective_agent::config::{default_config_path, load_config_default, CliArgs};
 use perspective_agent::manager::Manager as AgentManager;
 use perspective_agent::serve::run_with_shutdown;
@@ -10,6 +11,7 @@ use tokio::sync::watch;
 
 pub struct AppState {
     pub manager: AgentManager,
+    pub activity: Arc<ActivityLog>,
     server_stop: Mutex<Option<watch::Sender<()>>>,
 }
 
@@ -38,9 +40,10 @@ pub fn spawn_mcp_server(state: &Arc<AppState>) -> Result<(), String> {
         roots: vec![],
     };
 
+    let activity = Arc::clone(&state.activity);
     let (tx, rx) = watch::channel(());
     tauri::async_runtime::spawn(async move {
-        if let Err(e) = run_with_shutdown(cli, rx).await {
+        if let Err(e) = run_with_shutdown(cli, rx, Some(activity)).await {
             eprintln!("MCP server stopped: {e}");
         }
     });
@@ -55,6 +58,22 @@ pub fn stop_mcp_server(state: &Arc<AppState>) -> Result<String, String> {
     } else {
         Ok("no managed server (external process may still run)".into())
     }
+}
+
+pub async fn restart_mcp_server(state: &Arc<AppState>) -> Result<String, String> {
+    stop_mcp_server(state)?;
+    let port = state.manager.get_config().port;
+    for _ in 0..40 {
+        if perspective_agent::serve::probe_health(port).is_none() {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+    if perspective_agent::serve::probe_health(port).is_some() {
+        return Err("port still in use — stop external MCP process first".into());
+    }
+    spawn_mcp_server(state)?;
+    Ok("restarting MCP server…".into())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -78,12 +97,15 @@ pub fn run() {
                 .config_path
                 .clone()
                 .unwrap_or_else(default_config_path);
+            let activity_path = config.activity_log.clone().or_else(default_activity_log_path);
+            let activity = Arc::new(ActivityLog::open(activity_path));
             let manager = AgentManager::new(config, config_path.clone());
             if !config_path.exists() {
                 let _ = manager.save();
             }
             let state = Arc::new(AppState {
                 manager,
+                activity,
                 server_stop: Mutex::new(None),
             });
             app.manage(Arc::clone(&state));
@@ -98,7 +120,9 @@ pub fn run() {
             commands::save_config,
             commands::start_server,
             commands::stop_server,
+            commands::restart_server,
             commands::get_audit_logs,
+            commands::get_activity_events,
             commands::pick_folder,
         ])
         .run(tauri::generate_context!())

@@ -24,9 +24,12 @@
             <p class="brand-sub">本机 MCP 控制面板</p>
           </div>
         </div>
-        <div class="status-pill" id="statusBadge">
-          <span class="pulse" id="statusDot"></span>
-          <span id="statusText">检测中</span>
+        <div class="masthead-actions">
+          <a class="btn btn-ghost btn-sm btn-nav-link" href="stream.html">操作记录 →</a>
+          <div class="status-pill" id="statusBadge">
+            <span class="pulse" id="statusDot"></span>
+            <span id="statusText">检测中</span>
+          </div>
         </div>
       </header>
 
@@ -37,6 +40,7 @@
         </div>
         <div class="hero-actions">
           <button class="btn btn-accent" id="btnStart">启动服务</button>
+          <button class="btn btn-outline" id="btnRestart">重启</button>
           <button class="btn btn-outline" id="btnStop">停止</button>
           <button class="btn btn-ghost" id="btnRefresh">刷新</button>
         </div>
@@ -100,13 +104,17 @@
               <span class="field-label">审计日志路径</span>
               <input id="auditLogPath" placeholder="perspective-agent-audit.log" />
             </label>
+            <label class="field field-span-2">
+              <span class="field-label">操作记录路径</span>
+              <input id="activityLogPath" placeholder="perspective-agent-activity.jsonl" />
+            </label>
           </div>
         </section>
 
         <section class="panel">
           <div class="panel-head">
             <span class="section-num">03</span>
-            <h2>限额</h2>
+            <h2>限额与工具</h2>
           </div>
           <div class="limits-grid">
             <label class="field">
@@ -129,8 +137,28 @@
               <span class="field-label">Git diff MiB</span>
               <input id="maxGitDiffMiB" type="number" min="1" step="1" />
             </label>
+            <label class="field">
+              <span class="field-label">Glob 结果数</span>
+              <input id="maxGlobResults" type="number" min="1" step="1" />
+            </label>
+            <label class="field">
+              <span class="field-label">Grep 匹配数</span>
+              <input id="maxGrepMatches" type="number" min="1" step="1" />
+            </label>
+            <label class="field">
+              <span class="field-label">Bash 输出 MiB</span>
+              <input id="maxBashOutputMiB" type="number" min="1" step="1" />
+            </label>
+            <label class="field">
+              <span class="field-label">Bash 超时 (秒)</span>
+              <input id="bashTimeoutSecs" type="number" min="1" step="1" />
+            </label>
           </div>
-          <p class="footnote">修改限额后需重启 MCP 服务</p>
+          <label class="field-check field-span-2">
+            <input type="checkbox" id="allowBash" />
+            <span>允许 Bash 工具（高危 — 可执行 shell 命令）</span>
+          </label>
+          <p class="footnote">修改后需重启 MCP；glob / grep / edit_file 受读取与写入限额约束</p>
         </section>
 
         <section class="panel panel-span-2">
@@ -144,14 +172,6 @@
             <button class="btn btn-accent" id="btnSave" type="button">保存配置</button>
             <span class="config-path">配置 · <code id="configPath">—</code></span>
           </div>
-        </section>
-
-        <section class="panel panel-span-2">
-          <div class="panel-head">
-            <span class="section-num">05</span>
-            <h2>审计日志</h2>
-          </div>
-          <pre class="terminal" id="auditLogView">加载中…</pre>
         </section>
       </main>
     </div>

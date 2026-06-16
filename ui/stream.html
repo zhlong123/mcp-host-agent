@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>操作记录 · Perspective Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/stream.css" />
+  </head>
+  <body class="stream-body">
+    <div class="app stream-app">
+      <div class="grid-bg" aria-hidden="true"></div>
+
+      <header class="masthead stream-masthead">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">PA</div>
+          <div>
+            <h1>操作记录</h1>
+            <p class="brand-sub">Activity Stream</p>
+          </div>
+        </div>
+        <div class="masthead-actions">
+          <a class="btn btn-ghost btn-sm btn-nav-link" href="index.html">← 控制面板</a>
+          <div class="status-pill" id="streamLiveWrap">
+            <span class="pulse ok" id="streamLiveDot"></span>
+            <span id="streamLive">实时</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="stream-toolbar">
+        <span class="section-tag">Filter</span>
+        <div class="stream-toolbar-row">
+          <label class="field stream-field">
+            <span class="field-label">类型</span>
+            <select id="activityKind" aria-label="类型筛选">
+              <option value="">全部</option>
+              <option value="create">新建</option>
+              <option value="modify">修改</option>
+              <option value="read">读取</option>
+              <option value="list">列表</option>
+                <option value="git">Git</option>
+                <option value="search">搜索</option>
+                <option value="shell">Shell</option>
+                <option value="ping">Ping</option>
+              <option value="error">错误</option>
+            </select>
+          </label>
+          <label class="stream-check">
+            <input type="checkbox" id="activityErrorsOnly" />
+            <span>仅错误</span>
+          </label>
+          <label class="stream-check">
+            <input type="checkbox" id="activityAutoScroll" checked />
+            <span>自动滚底</span>
+          </label>
+          <div class="stream-toolbar-spacer"></div>
+          <button class="btn btn-ghost btn-sm" id="btnStreamClear" type="button">清屏</button>
+          <button class="btn btn-ghost btn-sm" id="btnActivityRefresh" type="button">重载</button>
+        </div>
+      </section>
+
+      <section class="panel stream-panel">
+        <div class="panel-head stream-panel-head">
+          <span class="section-num">05</span>
+          <h2>文件变更流</h2>
+        </div>
+        <div class="stream-viewport terminal" id="activityStream" tabindex="0">
+          <div class="stream-placeholder">等待 MCP 工具调用…</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/stream.js"></script>
+  </body>
+</html>

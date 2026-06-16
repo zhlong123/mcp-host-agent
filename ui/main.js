@@ -96,6 +96,12 @@ function fillLimits(limits) {
   document.getElementById("maxListEntries").value = limits.max_list_entries;
   document.getElementById("maxListDepth").value = limits.max_list_depth;
   document.getElementById("maxGitDiffMiB").value = bytesToMiB(limits.max_git_diff_bytes);
+  document.getElementById("maxGlobResults").value = limits.max_glob_results ?? 500;
+  document.getElementById("maxGrepMatches").value = limits.max_grep_matches ?? 200;
+  document.getElementById("maxBashOutputMiB").value = bytesToMiB(
+    limits.max_bash_output_bytes ?? 1024 * 1024
+  );
+  document.getElementById("bashTimeoutSecs").value = limits.bash_timeout_secs ?? 30;
 }
 
 function collectLimits() {
@@ -105,18 +111,25 @@ function collectLimits() {
     max_list_entries: +document.getElementById("maxListEntries").value,
     max_list_depth: +document.getElementById("maxListDepth").value,
     max_git_diff_bytes: miBToBytes(document.getElementById("maxGitDiffMiB").value),
+    max_glob_results: +document.getElementById("maxGlobResults").value,
+    max_grep_matches: +document.getElementById("maxGrepMatches").value,
+    max_bash_output_bytes: miBToBytes(document.getElementById("maxBashOutputMiB").value),
+    bash_timeout_secs: +document.getElementById("bashTimeoutSecs").value,
   };
 }
 
 function collectConfig(c) {
   const publicUrl = document.getElementById("publicMcpUrl").value.trim();
   const auditLog = document.getElementById("auditLogPath").value.trim();
+  const activityLog = document.getElementById("activityLogPath").value.trim();
   return {
     port: +document.getElementById("port").value,
     bind: document.getElementById("bind").value,
     token: document.getElementById("token").value || null,
     public_mcp_url: publicUrl || null,
     audit_log: auditLog || null,
+    activity_log: activityLog || null,
+    allow_bash: document.getElementById("allowBash").checked,
     roots: roots.map((r) => ({ name: r.name, path: r.path })),
     limits: collectLimits(),
     config_path: c.config_path,
@@ -130,6 +143,8 @@ async function loadConfig() {
   document.getElementById("token").value = c.token || "";
   document.getElementById("publicMcpUrl").value = c.public_mcp_url || "";
   document.getElementById("auditLogPath").value = c.audit_log || "";
+  document.getElementById("activityLogPath").value = c.activity_log || "";
+  document.getElementById("allowBash").checked = !!c.allow_bash;
   fillLimits(c.limits);
   roots = (c.roots || []).map((r) => ({
     name: r.name,
@@ -159,9 +174,6 @@ async function refresh() {
       txt.textContent = "Offline";
       badge.style.borderColor = "";
     }
-    const logs = await invoke("get_audit_logs");
-    document.getElementById("auditLogView").textContent =
-      logs.join("\n") || "— 暂无审计记录 —";
   } catch (e) {
     toast("刷新失败: " + e);
   }
@@ -193,6 +205,20 @@ document.getElementById("btnStart").onclick = async () => {
     setTimeout(refresh, 800);
   } catch (e) {
     toast(String(e));
+  }
+};
+
+document.getElementById("btnRestart").onclick = async () => {
+  const btn = document.getElementById("btnRestart");
+  btn.disabled = true;
+  try {
+    const msg = await invoke("restart_server");
+    toast(msg);
+    setTimeout(refresh, 1200);
+  } catch (e) {
+    toast(String(e));
+  } finally {
+    btn.disabled = false;
   }
 };
 

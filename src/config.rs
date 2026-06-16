@@ -14,6 +14,14 @@ pub struct LimitsConfig {
     pub max_list_depth: usize,
     #[serde(default = "default_max_git_diff_bytes")]
     pub max_git_diff_bytes: usize,
+    #[serde(default = "default_max_glob_results")]
+    pub max_glob_results: usize,
+    #[serde(default = "default_max_grep_matches")]
+    pub max_grep_matches: usize,
+    #[serde(default = "default_max_bash_output_bytes")]
+    pub max_bash_output_bytes: usize,
+    #[serde(default = "default_bash_timeout_secs")]
+    pub bash_timeout_secs: u64,
 }
 
 impl Default for LimitsConfig {
@@ -24,6 +32,10 @@ impl Default for LimitsConfig {
             max_list_entries: default_max_list_entries(),
             max_list_depth: default_max_list_depth(),
             max_git_diff_bytes: default_max_git_diff_bytes(),
+            max_glob_results: default_max_glob_results(),
+            max_grep_matches: default_max_grep_matches(),
+            max_bash_output_bytes: default_max_bash_output_bytes(),
+            bash_timeout_secs: default_bash_timeout_secs(),
         }
     }
 }
@@ -43,6 +55,18 @@ fn default_max_list_depth() -> usize {
 fn default_max_git_diff_bytes() -> usize {
     1024 * 1024
 }
+fn default_max_glob_results() -> usize {
+    500
+}
+fn default_max_grep_matches() -> usize {
+    200
+}
+fn default_max_bash_output_bytes() -> usize {
+    1024 * 1024
+}
+fn default_bash_timeout_secs() -> u64 {
+    30
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RootEntry {
@@ -60,11 +84,15 @@ pub struct FileConfig {
     pub token: Option<String>,
     #[serde(default)]
     pub audit_log: Option<PathBuf>,
+    #[serde(default)]
+    pub activity_log: Option<PathBuf>,
     /// URL shown to user for Perspective remote agent (e.g. frp tunnel). Local MCP URL is always computed from bind/port.
     #[serde(default)]
     pub public_mcp_url: Option<String>,
     #[serde(default)]
     pub limits: LimitsConfig,
+    #[serde(default)]
+    pub allow_bash: bool,
     #[serde(default)]
     pub roots: Vec<RootEntry>,
 }
@@ -83,8 +111,10 @@ impl Default for FileConfig {
             bind: default_bind(),
             token: None,
             audit_log: None,
+            activity_log: None,
             public_mcp_url: None,
             limits: LimitsConfig::default(),
+            allow_bash: false,
             roots: Vec::new(),
         }
     }
@@ -96,8 +126,10 @@ pub struct RuntimeConfig {
     pub bind: String,
     pub token: Option<String>,
     pub audit_log: Option<PathBuf>,
+    pub activity_log: Option<PathBuf>,
     pub public_mcp_url: Option<String>,
     pub limits: LimitsConfig,
+    pub allow_bash: bool,
     pub roots: Vec<RootEntry>,
     pub config_path: Option<PathBuf>,
 }
@@ -181,8 +213,10 @@ pub fn load_config(cli: &CliArgs) -> Result<RuntimeConfig> {
         bind: cfg.bind,
         token: cfg.token,
         audit_log: cfg.audit_log,
+        activity_log: cfg.activity_log,
         public_mcp_url: cfg.public_mcp_url,
         limits: cfg.limits,
+        allow_bash: cfg.allow_bash,
         roots: cfg.roots,
         config_path,
     })
@@ -212,8 +246,10 @@ pub fn save_config(path: &Path, cfg: &RuntimeConfig) -> Result<()> {
         bind: cfg.bind.clone(),
         token: cfg.token.clone(),
         audit_log: cfg.audit_log.clone(),
+        activity_log: cfg.activity_log.clone(),
         public_mcp_url: cfg.public_mcp_url.clone(),
         limits: cfg.limits.clone(),
+        allow_bash: cfg.allow_bash,
         roots: cfg.roots.clone(),
     };
     let text = toml::to_string_pretty(&file).context("serialize agent.toml")?;
@@ -303,6 +339,18 @@ pub fn validate_config(cfg: &RuntimeConfig) -> Result<()> {
     }
     if l.max_git_diff_bytes == 0 {
         bail!("limits.max_git_diff_bytes must be > 0");
+    }
+    if l.max_grep_matches == 0 {
+        bail!("limits.max_grep_matches must be > 0");
+    }
+    if l.max_glob_results == 0 {
+        bail!("limits.max_glob_results must be > 0");
+    }
+    if l.max_bash_output_bytes == 0 {
+        bail!("limits.max_bash_output_bytes must be > 0");
+    }
+    if l.bash_timeout_secs == 0 {
+        bail!("limits.bash_timeout_secs must be > 0");
     }
     if cfg.roots.is_empty() {
         tracing::warn!(

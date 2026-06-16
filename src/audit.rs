@@ -1,4 +1,5 @@
-use chrono::Utc;
+use chrono::Local;
+use crate::paths::format_audit_path;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
@@ -21,18 +22,23 @@ impl AuditLog {
         })
     }
 
-    pub async fn record(&self, tool: &str, path: &str) {
+    pub async fn record(&self, tool: &str, path: &Path) {
         let Some(log_path) = &self.path else {
             return;
         };
         let ip = CLIENT_IP
             .try_with(|s| s.clone())
             .unwrap_or_else(|_| "unknown".to_string());
+        let path_str = if path.as_os_str().is_empty() || path == Path::new("-") {
+            "-".to_string()
+        } else {
+            format_audit_path(path)
+        };
         let line = format!(
-            "{} tool={} path={} client_ip={}\n",
-            Utc::now().to_rfc3339(),
+            "{}  {}  path={}  ip={}\n",
+            Local::now().format("%Y-%m-%d %H:%M:%S"),
             tool,
-            sanitize_field(path),
+            sanitize_field(&path_str),
             sanitize_field(&ip)
         );
         let _guard = self.lock.lock().await;

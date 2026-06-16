@@ -41,6 +41,15 @@ pub fn canonical_roots(roots: &[RootEntry]) -> Vec<(String, PathBuf)> {
         .collect()
 }
 
+/// Normalize a resolved path for audit log output (forward slashes, no \\?\ prefix).
+pub fn format_audit_path(path: &Path) -> String {
+    let mut s = path.display().to_string();
+    if let Some(stripped) = s.strip_prefix(r"\\?\") {
+        s = stripped.to_string();
+    }
+    s.replace('\\', "/")
+}
+
 fn is_under_root(path: &Path, root: &Path) -> bool {
     path.starts_with(root)
 }
