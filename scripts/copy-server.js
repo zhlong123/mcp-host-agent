@@ -1,22 +1,21 @@
-import { copyFileSync, mkdirSync, existsSync } from "fs";
-import { join } from "path";
+import { join } from "node:path";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 
-const triple = process.env.CARGO_BUILD_TARGET || "x86_64-pc-windows-msvc";
-const src = join("target", "release", "perspective-agent.exe");
-const sidecarName = `perspective-agent-${triple}.exe`;
-
-const targets = [
-  join("src-tauri", "bin", sidecarName),
-  join("target", "release", sidecarName),
-];
+const triple = process.env.TARGET ?? "x86_64-pc-windows-msvc";
+const src = join("target", "release", "mcp-host-agent.exe");
+const sidecarName = `mcp-host-agent-${triple}.exe`;
+const dstDir = join("src-tauri", "bin");
+const dst = join(dstDir, sidecarName);
 
 if (!existsSync(src)) {
-  console.error(`missing ${src} — run cargo build --release -p perspective-agent first`);
+  console.error(`missing ${src} — run cargo build --release -p mcp-host-agent first`);
   process.exit(1);
 }
+mkdirSync(dstDir, { recursive: true });
+copyFileSync(src, dst);
+console.log(`copied ${src} -> ${dst}`);
 
-for (const dest of targets) {
-  mkdirSync(join(dest, ".."), { recursive: true });
-  copyFileSync(src, dest);
-  console.log(`copied ${src} -> ${dest}`);
-}
+// tauri build also expects target/release/mcp-host-agent-${triple}.exe
+const releaseDst = join("target", "release", sidecarName);
+copyFileSync(src, releaseDst);
+console.log(`copied ${src} -> ${releaseDst}`);

@@ -1,9 +1,9 @@
 mod commands;
 
-use perspective_agent::activity::{ActivityLog, default_activity_log_path};
-use perspective_agent::config::{default_config_path, load_config_default, CliArgs};
-use perspective_agent::manager::Manager as AgentManager;
-use perspective_agent::serve::run_with_shutdown;
+use mcp_host_agent::activity::{ActivityLog, default_activity_log_path};
+use mcp_host_agent::config::{default_config_path, load_config_default, CliArgs};
+use mcp_host_agent::manager::Manager as AgentManager;
+use mcp_host_agent::serve::run_with_shutdown;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use tauri::Manager;
@@ -64,12 +64,12 @@ pub async fn restart_mcp_server(state: &Arc<AppState>) -> Result<String, String>
     stop_mcp_server(state)?;
     let port = state.manager.get_config().port;
     for _ in 0..40 {
-        if perspective_agent::serve::probe_health(port).is_none() {
+        if mcp_host_agent::serve::probe_health(port).is_none() {
             break;
         }
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
-    if perspective_agent::serve::probe_health(port).is_some() {
+    if mcp_host_agent::serve::probe_health(port).is_some() {
         return Err("port still in use — stop external MCP process first".into());
     }
     spawn_mcp_server(state)?;
@@ -83,7 +83,7 @@ pub fn run() {
         .setup(|app| {
             let config = load_config_default().unwrap_or_else(|e| {
                 eprintln!("config load failed: {e}, using defaults");
-                perspective_agent::config::load_config(&CliArgs {
+                mcp_host_agent::config::load_config(&CliArgs {
                     serve: false,
                     config: None,
                     port: None,

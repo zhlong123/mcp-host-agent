@@ -330,7 +330,7 @@ pub fn summarize_text_diff(old: &str, new: &str) -> DiffSummary {
 pub fn default_activity_log_path() -> Option<PathBuf> {
     std::env::current_exe()
         .ok()
-        .and_then(|p| p.parent().map(|d| d.join("perspective-agent-activity.jsonl")))
+        .and_then(|p| p.parent().map(|d| d.join("mcp-host-agent-activity.jsonl")))
 }
 
 async fn append_line(path: &Path, line: &str) -> std::io::Result<()> {

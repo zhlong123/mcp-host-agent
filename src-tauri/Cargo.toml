@@ -1,19 +1,19 @@
 [package]
-name = "perspective-agent-app"
+name = "mcp-host-agent-app"
 version = "0.1.0"
-description = "Perspective Agent desktop manager"
+description = "MCP Host Agent desktop manager"
 authors = ["zhlong"]
 edition = "2021"
 
 [lib]
-name = "perspective_agent_app_lib"
+name = "mcp_host_agent_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-perspective-agent = { path = ".." }
+mcp-host-agent = { path = ".." }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tokio = { workspace = true, features = ["sync"] }

@@ -11,4 +11,4 @@
 
 ## 报告漏洞
 
-在 [GitHub Issues](https://github.com/zhlong123/perspective-agent/issues) 标题注明 **Security**，勿公开利用细节。
+在 [GitHub Issues](https://github.com/zhlong123/mcp-host-agent/issues) 标题注明 **Security**，勿公开利用细节。

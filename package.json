@@ -1,11 +1,11 @@
 {
-  "name": "perspective-agent-ui",
+  "name": "mcp-host-agent-ui",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build:ui": "vite build",
-    "build:server": "cargo build --release -p perspective-agent && node scripts/copy-server.js",
+    "build:server": "cargo build --release -p mcp-host-agent && node scripts/copy-server.js",
     "build": "npm run build:server && npm run build:ui",
     "build:app": "tauri build --no-bundle",
     "predev": "npm run build:server"

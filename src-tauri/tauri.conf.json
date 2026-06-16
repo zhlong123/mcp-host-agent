@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Perspective Agent",
+  "productName": "MCP Host Agent",
   "version": "0.1.0",
-  "identifier": "dev.perspective.agent",
+  "identifier": "dev.mcphost.agent",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Perspective Agent",
+        "title": "MCP Host Agent",
         "width": 1024,
         "height": 760,
         "resizable": true,

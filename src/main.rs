@@ -2,9 +2,9 @@
 
 use anyhow::Context;
 use clap::Parser;
-use perspective_agent::config::CliArgs;
-use perspective_agent::install_panic_log;
-use perspective_agent::serve::run as run_server;
+use mcp_host_agent::config::CliArgs;
+use mcp_host_agent::install_panic_log;
+use mcp_host_agent::serve::run as run_server;
 
 fn main() -> anyhow::Result<()> {
     install_panic_log();

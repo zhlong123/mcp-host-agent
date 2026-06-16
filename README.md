@@ -1,4 +1,4 @@
-# 本机 MCP Agent
+# MCP Host Agent
 
 > **让 AI 优雅地「伸手」到另一台电脑——最轻量的远程 Agent 方案。**
 
@@ -6,7 +6,7 @@
 
 一个 Rust 单文件服务 + 可选桌面面板。配置好沙箱目录，复制 MCP 地址，就能用。
 
-**License:** [MIT](LICENSE) · **仓库：** https://github.com/zhlong123/perspective-agent
+**License:** [MIT](LICENSE) · **仓库：** https://github.com/zhlong123/mcp-host-agent
 
 ---
 
@@ -32,8 +32,8 @@
 
 ```
 ┌─────────────────────┐          HTTP MCP           ┌──────────────────────────┐
-│  A：你的 AI 客户端   │  ────────────────────────▶  │  B：本机 MCP Agent        │
-│  Cursor / Claude…   │   http://B的IP:9876/mcp     │  perspective-agent-app    │
+│  A：你的 AI 客户端   │  ────────────────────────▶  │  B：MCP Host Agent        │
+│  Cursor / Claude…   │   http://B的IP:9876/mcp     │  mcp-host-agent-app    │
 └─────────────────────┘                               │  ├─ 沙箱内读/写/搜/Git     │
                                                       │  ├─ 审计 + 操作记录        │
                                                       │  └─ agent.toml 配置       │
@@ -53,11 +53,11 @@ AI 发出的每个动作（读文件、改一行、glob 搜索…）都是一次
 **推荐：桌面应用**
 
 ```bash
-git clone https://github.com/zhlong123/perspective-agent.git
-cd perspective-agent
+git clone https://github.com/zhlong123/mcp-host-agent.git
+cd mcp-host-agent
 npm install
 npm run build:app
-# 运行 target/release/perspective-agent-app.exe
+# 运行 target/release/mcp-host-agent-app.exe
 ```
 
 **或：仅 CLI（无界面）**
@@ -65,7 +65,7 @@ npm run build:app
 ```bash
 cargo build --release
 cp agent.toml.example agent.toml
-./target/release/perspective-agent --serve --config agent.toml
+./target/release/mcp-host-agent --serve --config agent.toml
 ```
 
 ### 2. 配置沙箱目录 `[[roots]]`（必做）
@@ -160,7 +160,7 @@ Agent **负责在 B 电脑上执行** 下列操作；AI 客户端 **负责** 决
 | **控制面板** | 启停/重启 MCP、端口与 Token、沙箱目录、读写/Glob/Grep/Bash 限额、复制 MCP 地址 |
 | **操作记录** | 实时流式查看 AI 每次调用了什么工具、改了哪些文件、diff 与命令输出 |
 
-MCP 服务内嵌在桌面进程里，**不必** 再单独开一个 `perspective-agent.exe` 黑窗口。
+MCP 服务内嵌在桌面进程里，**不必** 再单独开一个 `mcp-host-agent.exe` 黑窗口。
 
 ---
 
@@ -227,4 +227,4 @@ cargo test
 
 ## 反馈
 
-https://github.com/zhlong123/perspective-agent/issues
+https://github.com/zhlong123/mcp-host-agent/issues

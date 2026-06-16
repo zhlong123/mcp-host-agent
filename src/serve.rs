@@ -99,7 +99,7 @@ impl ServerHandler for Agent {
         ServerInfo {
             capabilities: ServerCapabilities::default(),
             server_info: rmcp::model::Implementation {
-                name: "perspective-agent".to_string(),
+                name: "mcp-host-agent".to_string(),
                 version: env!("CARGO_PKG_VERSION").to_string(),
                 ..Default::default()
             },
@@ -1165,7 +1165,7 @@ async fn index(State(state): State<Arc<AppState>>) -> axum::response::Html<Strin
     };
     axum::response::Html(format!(
         r#"<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>本机 MCP Agent</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>MCP Host Agent</title>
 <style>
 body{{font-family:Segoe UI,sans-serif;background:#0f1419;color:#e8eef7;margin:0;padding:32px;line-height:1.6}}
 .card{{max-width:720px;background:#1a2332;border:1px solid #2d3f58;border-radius:12px;padding:24px}}
@@ -1173,11 +1173,11 @@ body{{font-family:Segoe UI,sans-serif;background:#0f1419;color:#e8eef7;margin:0;
 a{{color:#3d9cf5}} ul{{padding-left:20px}}
 </style></head><body>
 <div class="card">
-<h1>本机 MCP Agent <span class="ok">● ONLINE</span></h1>
+<h1>MCP Host Agent <span class="ok">● ONLINE</span></h1>
 <p>这是 <strong>MCP 后端服务</strong>，不是图形管理页面。浏览器里只能查看本说明和探活接口。</p>
 <h2>怎么用</h2>
 <ul>
-<li><strong>图形管理</strong>：运行 <code>perspective-agent-app.exe</code>（桌面窗口）</li>
+<li><strong>图形管理</strong>：运行 <code>mcp-host-agent-app.exe</code>（桌面窗口）</li>
 <li><strong>探活 JSON</strong>：<a href="/health">/health</a></li>
 <li><strong>MCP 接口</strong>：<code>/mcp</code>（供 MCP 客户端连接；浏览器直接打开会 406，属正常）</li>
 <li><strong>客户端填写的地址</strong>：<code>http://127.0.0.1:{port}/mcp</code> 或穿透后的公网地址</li>
@@ -1188,7 +1188,7 @@ a{{color:#3d9cf5}} ul{{padding-left:20px}}
 <li>Git 工具：{git}</li>
 <li>沙箱 roots：{roots_html}</li>
 </ul>
-<p style="color:#8fa3bf;font-size:14px">Windows 请用 <code>127.0.0.1:{port}</code>，不要用 <code>localhost</code>（会走 IPv6）。图形管理请开 <code>perspective-agent-app.exe</code>。</p>
+<p style="color:#8fa3bf;font-size:14px">Windows 请用 <code>127.0.0.1:{port}</code>，不要用 <code>localhost</code>（会走 IPv6）。图形管理请开 <code>mcp-host-agent-app.exe</code>。</p>
 </div></body></html>"#,
         version = env!("CARGO_PKG_VERSION"),
         git = if state.git_available { "可用" } else { "不可用" },
@@ -1206,7 +1206,7 @@ fn html_escape(s: &str) -> String {
 fn default_audit_log_path() -> Option<PathBuf> {
     std::env::current_exe()
         .ok()
-        .and_then(|p| p.parent().map(|d| d.join("perspective-agent-audit.log")))
+        .and_then(|p| p.parent().map(|d| d.join("mcp-host-agent-audit.log")))
 }
 
 pub fn probe_health(port: u16) -> Option<HealthResponse> {
@@ -1235,7 +1235,7 @@ pub async fn run_with_shutdown(
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info,perspective_agent=debug")),
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info,mcp_host_agent=debug")),
         )
         .try_init()
         .ok();

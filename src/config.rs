@@ -86,7 +86,7 @@ pub struct FileConfig {
     pub audit_log: Option<PathBuf>,
     #[serde(default)]
     pub activity_log: Option<PathBuf>,
-    /// URL shown to user for Perspective remote agent (e.g. frp tunnel). Local MCP URL is always computed from bind/port.
+    /// Public/tunnel MCP URL for display in desktop app (e.g. frp). Local URL is computed from bind/port.
     #[serde(default)]
     pub public_mcp_url: Option<String>,
     #[serde(default)]
@@ -263,7 +263,7 @@ pub fn save_config(path: &Path, cfg: &RuntimeConfig) -> Result<()> {
 }
 
 #[derive(Debug, Clone, clap::Parser)]
-#[command(name = "perspective-agent", about = "Perspective local MCP agent")]
+#[command(name = "mcp-host-agent", about = "MCP Host Agent — local MCP server for remote AI clients")]
 pub struct CliArgs {
     /// Run MCP HTTP server (used by Tauri sidecar; default when no flag is set)
     #[arg(long)]

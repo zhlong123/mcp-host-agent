@@ -1,4 +1,4 @@
-//! Perspective Agent core library (MCP server + config + manager)
+//! MCP Host Agent core library (MCP server + config + manager)
 
 pub mod activity;
 pub mod audit;
@@ -16,8 +16,8 @@ pub fn install_panic_log() {
     let log_path = exe
         .as_ref()
         .and_then(|p| p.parent())
-        .map(|d| d.join("perspective-agent-panic.log"))
-        .unwrap_or_else(|| PathBuf::from("perspective-agent-panic.log"));
+        .map(|d| d.join("mcp-host-agent-panic.log"))
+        .unwrap_or_else(|| PathBuf::from("mcp-host-agent-panic.log"));
     std::panic::set_hook(Box::new(move |info| {
         let msg = format!(
             "[{}] PANIC: {}\nbacktrace:\n{}\n",

@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    perspective_agent_app_lib::run();
+    mcp_host_agent_app_lib::run();
 }

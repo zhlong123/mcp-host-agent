@@ -25,7 +25,7 @@ pub struct StatusResponse {
     pub detail: String,
     pub version: Option<String>,
     pub git_available: Option<bool>,
-    /// URL to paste into Perspective (public_mcp_url if set, else local)
+    /// MCP URL for clients (public_mcp_url if set, else local)
     pub mcp_url: String,
     pub local_mcp_url: String,
     pub public_mcp_url: Option<String>,
@@ -165,5 +165,5 @@ impl Manager {
 pub fn default_audit_log_path() -> Option<PathBuf> {
     std::env::current_exe()
         .ok()
-        .and_then(|p| p.parent().map(|d| d.join("perspective-agent-audit.log")))
+        .and_then(|p| p.parent().map(|d| d.join("mcp-host-agent-audit.log")))
 }

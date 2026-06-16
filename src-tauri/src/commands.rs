@@ -1,7 +1,7 @@
 use crate::{restart_mcp_server, stop_mcp_server, spawn_mcp_server, AppState};
-use perspective_agent::activity::{ActivityEvent, ActivityQuery};
-use perspective_agent::config::RuntimeConfig;
-use perspective_agent::manager::StatusResponse;
+use mcp_host_agent::activity::{ActivityEvent, ActivityQuery};
+use mcp_host_agent::config::RuntimeConfig;
+use mcp_host_agent::manager::StatusResponse;
 use std::sync::Arc;
 use tauri::{State};
 use tauri_plugin_dialog::DialogExt;

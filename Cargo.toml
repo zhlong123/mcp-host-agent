@@ -1,6 +1,6 @@
 [workspace]
 # 2026-06-16:本 repo 是单 crate 既是 root crate 又是 workspace root,
-# 保留原 perspective workspace 里 { workspace = true } 的引用方式,避免展平 20+ 个 dep
+# 单 crate workspace root；依赖通过 [workspace.dependencies] 共享
 resolver = "2"
 members = [".", "src-tauri"]
 
@@ -51,19 +51,19 @@ walkdir = "2"
 regex = "1"
 
 [package]
-name = "perspective-agent"
+name = "mcp-host-agent"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
-description = "Perspective Agent — 本机 MCP server,暴露文件 / git 工具给 Perspective server"
+description = "MCP Host Agent — lightweight local MCP server for remote AI clients"
 
 [lib]
-name = "perspective_agent"
+name = "mcp_host_agent"
 path = "src/lib.rs"
 
 [[bin]]
-name = "perspective-agent"
+name = "mcp-host-agent"
 path = "src/main.rs"
 
 [dependencies]

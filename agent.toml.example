@@ -1,12 +1,12 @@
-# 本机 MCP Agent 配置
+# 本机 MCP Host Agent 配置
 # Copy to agent.toml (same dir as exe or project root) or pass --config agent.toml
 #
 # Desktop management (recommended):
 #   npm run tauri dev          # development
-#   npx tauri build            # release → target/release/perspective-agent-app.exe
+#   npx tauri build            # release → target/release/mcp-host-agent-app.exe
 #
 # MCP server only (CLI / sidecar):
-#   perspective-agent.exe --serve --config agent.toml
+#   mcp-host-agent.exe --serve --config agent.toml
 
 port = 9876
 bind = "0.0.0.0"
@@ -14,11 +14,11 @@ bind = "0.0.0.0"
 # Optional Bearer token for /mcp (recommended when using tunnel/public exposure)
 # token = "change-me-to-a-long-random-string"
 
-# Audit log path (default: perspective-agent-audit.log next to exe)
-# audit_log = "perspective-agent-audit.log"
+# Audit log path (default: mcp-host-agent-audit.log next to exe)
+# audit_log = "mcp-host-agent-audit.log"
 
 # Structured operation log for desktop timeline (JSONL)
-# activity_log = "perspective-agent-activity.jsonl"
+# activity_log = "mcp-host-agent-activity.jsonl"
 
 # Public/tunnel MCP URL shown in desktop app (optional display copy)
 # public_mcp_url = "http://your-host:9876/mcp"

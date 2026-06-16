@@ -2010,6 +2010,53 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 
 [[package]]
+name = "mcp-host-agent"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "base64 0.22.1",
+ "chrono",
+ "clap",
+ "futures",
+ "globset",
+ "hyper",
+ "minreq",
+ "rand 0.8.6",
+ "regex",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "similar",
+ "thiserror 1.0.69",
+ "tokio",
+ "toml 0.8.2",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+ "walkdir",
+ "which",
+]
+
+[[package]]
+name = "mcp-host-agent-app"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "mcp-host-agent",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tokio",
+]
+
+[[package]]
 name = "memchr"
 version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2427,53 +2474,6 @@ name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
-
-[[package]]
-name = "perspective-agent"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "axum",
- "base64 0.22.1",
- "chrono",
- "clap",
- "futures",
- "globset",
- "hyper",
- "minreq",
- "rand 0.8.6",
- "regex",
- "rmcp",
- "serde",
- "serde_json",
- "similar",
- "thiserror 1.0.69",
- "tokio",
- "toml 0.8.2",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "uuid",
- "walkdir",
- "which",
-]
-
-[[package]]
-name = "perspective-agent-app"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "parking_lot",
- "perspective-agent",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tokio",
-]
 
 [[package]]
 name = "phf"
