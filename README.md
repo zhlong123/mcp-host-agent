@@ -2,7 +2,7 @@
 
 > **让 AI 优雅地「伸手」到另一台电脑——最轻量的远程 Agent 方案。**
 
-你在 **A 电脑** 上跑 Cursor / Claude / 任意 MCP 客户端；在 **B 电脑** 上跑本 Agent。AI 通过标准 MCP 协议，直接在 B 上读代码、改文件、搜项目、看 Git、（可选）跑命令——**不需要** SSH 手工敲命令，不需要在 B 上再装一套 IDE，不需要把整台机器交给云端。
+你在 **A 电脑** 上跑 **Hermes**、**OpenClaw**、Cursor、Claude 等 MCP 客户端；在 **B 电脑** 上跑本 Agent。AI 通过标准 MCP 协议，直接在 B 上读代码、改文件、搜项目、看 Git、（可选）跑命令——**不需要** SSH 手工敲命令，不需要在 B 上再装一套 IDE，不需要把整台机器交给云端。
 
 一个 Rust 单文件服务 + 可选桌面面板。配置好沙箱目录，复制 MCP 地址，就能用。
 
@@ -16,7 +16,7 @@
 |------|----------|----------|
 | 远程改代码 | SSH + vim / 远程桌面 | MCP 工具调用，AI 直接读写 |
 | 部署重量 | Docker、Node、Python 栈 | **纯 Rust 单 exe**，无运行时依赖 |
-| 协议 | 各客户端各搞一套 | **标准 MCP over HTTP**，Cursor 等即连即用 |
+| 协议 | 各客户端各搞一套 | **标准 MCP Streamable HTTP**，Hermes / OpenClaw / Cursor 即连即用 |
 | 安全 | 整机权限 | **沙箱 roots + 限额 + 可选 Token + Bash 默认关** |
 | 可观测 | 黑盒 | **操作记录流** + 审计日志，改了什么看得见 |
 
@@ -33,7 +33,8 @@
 ```
 ┌─────────────────────┐          HTTP MCP           ┌──────────────────────────┐
 │  A：你的 AI 客户端   │  ────────────────────────▶  │  B：MCP Host Agent        │
-│  Cursor / Claude…   │   http://B的IP:9876/mcp     │  mcp-host-agent-app    │
+│  Hermes / OpenClaw  │   http://B的IP:9876/mcp     │  mcp-host-agent-app    │
+│  Cursor / Claude…   │
 └─────────────────────┘                               │  ├─ 沙箱内读/写/搜/Git     │
                                                       │  ├─ 审计 + 操作记录        │
                                                       │  └─ agent.toml 配置       │
@@ -41,6 +42,92 @@
 ```
 
 AI 发出的每个动作（读文件、改一行、glob 搜索…）都是一次 MCP 工具调用；Agent 在 **B 电脑本地** 执行，结果回传给 A。
+
+---
+
+## 支持的 MCP 客户端
+
+本 Agent 暴露 **MCP Streamable HTTP**（`/mcp`），下列客户端均已验证可对接。  
+**A 电脑**跑客户端，**B 电脑**跑 Agent；工具路径填 **B 上的绝对路径**。
+
+| 客户端 | 传输 | 文档 |
+|--------|------|------|
+| **[Hermes Agent](https://hermes-agent.nousresearch.com/)** | HTTP / Streamable HTTP | [MCP 配置](https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp) |
+| **[OpenClaw](https://openclaw.ai/)** | `streamable-http` | [MCP CLI](https://docs.openclaw.ai/cli/mcp) |
+| Cursor | Streamable HTTP | Settings → MCP |
+| Claude Desktop | HTTP MCP | 依版本配置 MCP Server URL |
+
+若 B 上配置了 `token`，所有客户端均需在请求头带：`Authorization: Bearer <token>`。
+
+### Hermes Agent
+
+在 `~/.hermes/config.yaml`（或项目的 `mcp_servers`）中添加：
+
+```yaml
+mcp_servers:
+  host_agent:
+    url: "http://192.168.1.100:9876/mcp"   # B 的局域网 IP，或穿透公网 URL
+    headers:
+      Authorization: "Bearer 你的token"      # agent.toml 未设 token 可删掉 headers
+    connect_timeout: 60
+    timeout: 180
+```
+
+- 启动 Hermes 后自动发现 `read_file`、`glob`、`grep`、`git_status` 等 11 个工具
+- 改配置后可执行 **`/reload-mcp`** 热加载，无需重启 Hermes
+- 远程 HTTP 服务器 **无需在 A 上安装 Rust / 本仓库**，只要 URL 可达
+
+### OpenClaw
+
+在 `~/.openclaw/openclaw.json` 的 `mcp.servers` 中添加（需支持 `streamable-http` 的版本）：
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "host-agent": {
+        "url": "http://192.168.1.100:9876/mcp",
+        "transport": "streamable-http",
+        "headers": {
+          "Authorization": "Bearer 你的token"
+        }
+      }
+    }
+  }
+}
+```
+
+或使用 CLI 一键添加：
+
+```bash
+openclaw mcp add host-agent \
+  --url http://192.168.1.100:9876/mcp \
+  --transport streamable-http \
+  --header "Authorization=Bearer 你的token"
+```
+
+然后 **重启 OpenClaw gateway**，检查：
+
+```bash
+openclaw mcp list
+openclaw tools list
+```
+
+若不想某 Agent 使用 MCP 工具，可在 profile 里 `tools.deny: ["bundle-mcp"]`（见 [OpenClaw 文档](https://docs.openclaw.ai/cli/mcp)）。
+
+### Cursor / Claude Desktop
+
+1. MCP 类型选 **Streamable HTTP**（或 HTTP MCP）
+2. URL：`http://127.0.0.1:9876/mcp`（本机）或 `http://<B的IP>:9876/mcp`（远程）
+3. 有 token 时在 Headers 填 `Authorization: Bearer ...`
+
+### 连通性自检
+
+| 步骤 | 命令 / 操作 |
+|------|-------------|
+| B 上 Agent 存活 | 浏览器或 `curl http://127.0.0.1:9876/health` |
+| A 能访问 B | `curl http://<B的IP>:9876/health` |
+| MCP 工具可用 | 客户端里调用 `ping`，应返回版本与 `roots` 列表 |
 
 ---
 
@@ -108,11 +195,11 @@ token = "足够长的随机字符串"    # 穿透/公网：强烈建议
 
 ### 5. 在 A 电脑注册 MCP Server
 
-在 Cursor / Claude Desktop / 其他 MCP 客户端中：
+见上文 **[支持的 MCP 客户端](#支持的-mcp-客户端)**（含 Hermes / OpenClaw 完整配置）。通用步骤：
 
 1. 添加 **Streamable HTTP** 类型 MCP
-2. URL 填上表中的地址（公网 URL 可写在 B 的 `public_mcp_url`，控制面板里一键复制）
-3. 若 B 配置了 `token`，在客户端填相同 Bearer Token
+2. URL 填 B 的地址（公网 URL 可写在 B 的 `public_mcp_url`，控制面板里一键复制）
+3. 若 B 配置了 `token`，在客户端 Headers 填 `Authorization: Bearer ...`
 
 ### 6. 验证连通
 
