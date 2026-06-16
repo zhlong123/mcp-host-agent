@@ -1,14 +1,14 @@
 # Security
 
-Perspective Agent exposes **local file and optional shell access** to MCP clients over HTTP. Treat it as privileged infrastructure.
+本服务通过 HTTP 向 MCP 客户端暴露**本机文件与可选 Shell 能力**，请按特权服务对待。
 
-## Defaults
+## 建议
 
-- `bash` is **disabled** unless `allow_bash = true` in `agent.toml`.
-- Configure `[[roots]]` so only intended project directories are reachable.
-- Prefer binding to `127.0.0.1` on single-user machines; use `0.0.0.0` only on trusted LAN/VPN.
-- Set a strong `token` when exposing `/mcp` through a tunnel or public URL.
+- `bash` 默认关闭，仅在 `agent.toml` 中设置 `allow_bash = true` 后可用。
+- 配置 `[[roots]]`，仅开放需要的项目目录。
+- 单机使用优先 `bind = "127.0.0.1"`；仅在可信 LAN/VPN 下使用 `0.0.0.0`。
+- 穿透或公网访问时设置强 `token`，并在隧道层再加鉴权。
 
-## Reporting
+## 报告漏洞
 
-Open a [GitHub Issue](https://github.com/zhlong123/perspective-agent/issues) with **Security** in the title for vulnerabilities. Do not publish exploit details before a fix is available.
+在 [GitHub Issues](https://github.com/zhlong123/perspective-agent/issues) 标题注明 **Security**，勿公开利用细节。

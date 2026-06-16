@@ -1,4 +1,4 @@
-# Perspective Agent configuration
+# 本机 MCP Agent 配置
 # Copy to agent.toml (same dir as exe or project root) or pass --config agent.toml
 #
 # Desktop management (recommended):
@@ -20,7 +20,7 @@ bind = "0.0.0.0"
 # Structured operation log for desktop timeline (JSONL)
 # activity_log = "perspective-agent-activity.jsonl"
 
-# Public/tunnel MCP URL shown in desktop app (Perspective remote agent URL)
+# Public/tunnel MCP URL shown in desktop app (optional display copy)
 # public_mcp_url = "http://your-host:9876/mcp"
 
 [limits]

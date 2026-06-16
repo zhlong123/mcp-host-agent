@@ -1164,7 +1164,7 @@ async fn index(State(state): State<Arc<AppState>>) -> axum::response::Html<Strin
     };
     axum::response::Html(format!(
         r#"<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>Perspective Agent</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>本机 MCP Agent</title>
 <style>
 body{{font-family:Segoe UI,sans-serif;background:#0f1419;color:#e8eef7;margin:0;padding:32px;line-height:1.6}}
 .card{{max-width:720px;background:#1a2332;border:1px solid #2d3f58;border-radius:12px;padding:24px}}
@@ -1172,14 +1172,14 @@ body{{font-family:Segoe UI,sans-serif;background:#0f1419;color:#e8eef7;margin:0;
 a{{color:#3d9cf5}} ul{{padding-left:20px}}
 </style></head><body>
 <div class="card">
-<h1>Perspective Agent <span class="ok">● ONLINE</span></h1>
+<h1>本机 MCP Agent <span class="ok">● ONLINE</span></h1>
 <p>这是 <strong>MCP 后端服务</strong>，不是图形管理页面。浏览器里只能查看本说明和探活接口。</p>
 <h2>怎么用</h2>
 <ul>
 <li><strong>图形管理</strong>：运行 <code>perspective-agent-app.exe</code>（桌面窗口）</li>
 <li><strong>探活 JSON</strong>：<a href="/health">/health</a></li>
-<li><strong>MCP 接口</strong>：<code>/mcp</code>（给 Perspective 用，浏览器直接打开会 406，属正常）</li>
-<li><strong>填到 Perspective</strong>：<code>http://127.0.0.1:{port}/mcp</code> 或穿透地址</li>
+<li><strong>MCP 接口</strong>：<code>/mcp</code>（供 MCP 客户端连接；浏览器直接打开会 406，属正常）</li>
+<li><strong>客户端填写的地址</strong>：<code>http://127.0.0.1:{port}/mcp</code> 或穿透后的公网地址</li>
 </ul>
 <h2>当前状态</h2>
 <ul>

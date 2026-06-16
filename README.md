@@ -1,108 +1,120 @@
-# Perspective Agent
+# 本机 MCP Agent
 
-Local-first **MCP (Model Context Protocol) server** for AI coding agents: sandboxed file I/O, search, Git, and optional shell — with a Tauri desktop control panel and activity stream.
-
-Works standalone with any MCP client over HTTP. Originally extracted from the Perspective monorepo as an independent agent crate.
+在本机运行 **MCP（Model Context Protocol）服务**，供 Cursor、Claude Desktop 等 MCP 客户端通过 HTTP 调用：读改文件、搜索、Git、可选 Shell。带 Tauri 桌面控制面板与操作记录页。
 
 **License:** [MIT](LICENSE)
 
-## Features
+## 环境要求
 
-- **MCP over HTTP** — default `http://127.0.0.1:9876/mcp` (streamable HTTP)
-- **Path sandbox** — `[[roots]]` in `agent.toml`; only allowed directories
-- **11 tools** — read / write / edit files, list & stat, glob & grep, git status & diff, ping, optional bash
-- **Limits** — max read/write size, list depth, grep/glob caps, bash timeout & output size
-- **Audit log** — plain-text tool call log
-- **Activity stream** — JSONL + desktop UI with diff previews
-- **Desktop app** — start/stop/restart MCP, edit config, copy endpoints
+- Rust 1.75+
+- 桌面应用构建还需 Node.js 18+
 
-## Quick start
+## 安装与运行
 
-### MCP server only (CLI)
+### 方式一：桌面应用（推荐）
+
+```bash
+git clone https://github.com/zhlong123/perspective-agent.git
+cd perspective-agent
+npm install
+npm run build:app
+```
+
+产物：`target/release/perspective-agent-app.exe`（Windows）或对应平台的 app 二进制。
+
+启动后：
+
+1. 在控制面板配置 **沙箱目录**、端口、限额
+2. 点击 **保存配置** → **启动服务**（或 **重启**）
+3. 复制 **本机 MCP** 地址，填到 MCP 客户端
+
+### 方式二：仅 CLI 服务
 
 ```bash
 cargo build --release
-cp agent.toml.example agent.toml   # edit roots & limits
+cp agent.toml.example agent.toml   # 编辑 roots 与 limits
 ./target/release/perspective-agent --serve --config agent.toml
 ```
 
-Health check: `GET http://127.0.0.1:9876/health`
-
-### Desktop app (Tauri)
+健康检查：
 
 ```bash
-npm install
-npm run tauri dev      # development
-npm run build:app      # release → target/release/perspective-agent-app.exe
+curl http://127.0.0.1:9876/health
 ```
 
-## MCP tools
+## 连接 MCP 客户端
 
-| Tool | Description |
-|------|-------------|
-| `ping` | Connectivity & roots probe |
-| `read_file` | Read file (base64 + optional UTF-8 text / line numbers) |
-| `write_file` | Create or overwrite file (base64) |
-| `edit_file` | Exact string replace (UTF-8 text) |
-| `list_dir` | List directory (optional recursive) |
-| `stat` | File metadata |
-| `glob` | Find paths by pattern (no content read) |
-| `grep` | Regex search in file contents |
-| `git_status` | Branch, dirty state, ahead/behind |
-| `git_diff` | Git diff (optional staged) |
-| `bash` | Shell command (**off by default**, set `allow_bash = true`) |
+| 场景 | MCP 地址 |
+|------|----------|
+| 本机 | `http://127.0.0.1:9876/mcp` |
+| 局域网其他机器 | `http://<本机IP>:9876/mcp` |
+| 穿透/公网 | 隧道暴露后的 URL，并在 `agent.toml` 配置 `token` |
 
-See [agent.toml.example](agent.toml.example) for limits and sandbox configuration.
+Windows 建议用 `127.0.0.1`，避免 `localhost` 走 IPv6 连不上。
 
-## Connect from a remote MCP client
+在 MCP 客户端中添加 **Streamable HTTP** 类型的 MCP Server，填入上述地址。调用工具时使用 **本机绝对路径**（如 `D:/Projects/foo/src/main.rs`）。
 
-**Same machine:** point your client at `http://127.0.0.1:9876/mcp`.
+## 配置（agent.toml）
 
-**Another machine on LAN:**
+复制 `agent.toml.example` 为 `agent.toml`（与 exe 同目录或项目根），主要项：
 
-1. Run agent on machine B (configure `bind` and `[[roots]]`).
-2. Register B's URL in your MCP client, e.g. `http://192.168.1.100:9876/mcp`.
-3. Use absolute paths on B when calling tools.
+```toml
+port = 9876
+bind = "0.0.0.0"          # 仅本机用时改为 127.0.0.1
+# token = "随机长字符串"   # 穿透/公网时建议开启
 
-**Public / tunnel:** put auth at the tunnel layer **and** set `token` in `agent.toml`. Never expose an unauthenticated agent with empty roots. See [SECURITY.md](SECURITY.md).
+[limits]
+max_read_bytes = 10485760
+max_write_bytes = 10485760
+# … 见 agent.toml.example
 
-## Build
+# allow_bash = true        # 默认关闭，开启后可跑 shell
 
-Requires Rust 1.75+.
+[[roots]]
+name = "my-project"
+path = "D:/Projects/my-project"
+```
+
+- **roots**：只允许访问列出的目录；留空则不限路径（公网场景危险）
+- 修改配置后需 **重启 MCP** 生效
+
+也可在桌面 **控制面板** 图形编辑并保存。
+
+## MCP 工具
+
+| 工具 | 说明 |
+|------|------|
+| `read_file` | 读文件（支持文本行号） |
+| `write_file` | 新建/覆盖文件 |
+| `edit_file` | 字符串精准替换 |
+| `list_dir` | 列目录（可递归） |
+| `stat` | 文件元信息 |
+| `glob` | 按文件名模式搜索 |
+| `grep` | 正则搜索文件内容 |
+| `git_status` | Git 状态 |
+| `git_diff` | Git diff |
+| `bash` | 执行 Shell（需 `allow_bash = true`） |
+| `ping` | 连通性与沙箱探测 |
+
+## 桌面应用
+
+| 页面 | 功能 |
+|------|------|
+| 控制面板 | 启停/重启 MCP、网络与限额、沙箱目录、保存配置 |
+| 操作记录 | 流式查看每次工具调用、diff 与输出预览 |
+
+## 开发
 
 ```bash
-# Linux / macOS
-cargo build --release
-
-# Windows desktop app
-npm install && npm run build:app
+npm run tauri dev      # 桌面应用热重载
+cargo test             # Rust 单元测试
+npm run build:ui       # 仅构建前端
 ```
 
-Core binary is a **single Rust executable** (no Python/Node runtime for the server).
+## 安全
 
-## Configuration
+详见 [SECURITY.md](SECURITY.md)。公网暴露务必配置 `token` 与 `[[roots]]`，默认不要开启 `allow_bash`。
 
-Copy `agent.toml.example` → `agent.toml` (next to the binary or project root). Key fields:
+## 问题反馈
 
-- `port`, `bind`, optional `token`
-- `[limits]` — byte caps, glob/grep/bash limits
-- `allow_bash` — enable shell tool (high risk)
-- `[[roots]]` — allowed path prefixes
-
-## Perspective integration
-
-When used with Perspective, the server talks to this agent via MCP JSON-RPC. Core tool names/schemas for `read_file`, `write_file`, `list_dir`, and `git_status` are the stable contract; extended tools (`edit_file`, `glob`, `grep`, `bash`) are agent-side utilities.
-
-Project paths may use `agent://<name>/C:/path/to/project` URIs when configured in Perspective.
-
-## Development
-
-```bash
-cargo test
-npm run build:ui
-npm run tauri dev
-```
-
-## Feedback
-
-Issues and PRs welcome on GitHub.
+https://github.com/zhlong123/perspective-agent/issues
