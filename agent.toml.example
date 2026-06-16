@@ -41,8 +41,8 @@ bash_timeout_secs = 30
 # Path sandbox: only paths under these roots are allowed.
 # If empty, all paths are allowed (unsafe for tunnel).
 [[roots]]
-name = "perspective-agent"
-path = "D:/Preoject/pulic/perspective-agent"
+name = "my-project"
+path = "D:/Projects/my-project"
 
 # [[roots]]
 # name = "another-project"

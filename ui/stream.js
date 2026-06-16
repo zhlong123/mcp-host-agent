@@ -4,6 +4,7 @@ let lastActivityId = 0;
 let filterKey = "";
 let lineCounter = 0;
 let pollTimer = null;
+let programmaticScroll = false;
 
 const streamEl = () => document.getElementById("activityStream");
 
@@ -44,11 +45,15 @@ function setLiveStatus(live) {
   const txt = document.getElementById("streamLive");
   if (live) {
     dot.classList.add("ok");
-    txt.textContent = "实时";
+    txt.textContent = "跟随中";
   } else {
     dot.classList.remove("ok");
-    txt.textContent = "已暂停";
+    txt.textContent = autoScrollEnabled() ? "滚底中…" : "已暂停";
   }
+}
+
+function updateLiveStatus() {
+  setLiveStatus(autoScrollEnabled() && isNearBottom());
 }
 
 function autoScrollEnabled() {
@@ -59,7 +64,12 @@ function scrollToBottom(force = false) {
   const el = streamEl();
   if (!el) return;
   if (force || autoScrollEnabled()) {
+    programmaticScroll = true;
     el.scrollTop = el.scrollHeight;
+    requestAnimationFrame(() => {
+      programmaticScroll = false;
+      updateLiveStatus();
+    });
   }
 }
 
@@ -267,7 +277,9 @@ function appendEvents(events) {
     lastActivityId = Math.max(lastActivityId, ev.id);
   }
   if (wasBottom || autoScrollEnabled()) {
-    requestAnimationFrame(() => scrollToBottom(true));
+    scrollToBottom(true);
+  } else {
+    updateLiveStatus();
   }
 }
 
@@ -299,7 +311,7 @@ async function refreshActivity(full = false) {
       return;
     }
     appendEvents(events);
-    setLiveStatus(autoScrollEnabled() && isNearBottom());
+    if (!events.length) updateLiveStatus();
   } catch (e) {
     setLiveStatus(false);
     document.getElementById("streamLive").textContent = "离线";
@@ -314,12 +326,13 @@ function setupScrollPause() {
   streamEl().addEventListener(
     "scroll",
     () => {
+      if (programmaticScroll) return;
       const chk = document.getElementById("activityAutoScroll");
       if (!isNearBottom()) {
         chk.checked = false;
-        setLiveStatus(false);
+        updateLiveStatus();
       } else if (chk.checked) {
-        setLiveStatus(true);
+        updateLiveStatus();
       }
     },
     { passive: true }
@@ -337,7 +350,8 @@ document.getElementById("activityErrorsOnly").onchange = () => refreshActivity(t
 document.getElementById("activityAutoScroll").onchange = (e) => {
   if (e.target.checked) {
     scrollToBottom(true);
-    setLiveStatus(true);
+  } else {
+    updateLiveStatus();
   }
 };
 
