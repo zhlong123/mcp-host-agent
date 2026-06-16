@@ -104,10 +104,11 @@ impl ServerHandler for Agent {
                 ..Default::default()
             },
             instructions: Some(
-                "Perspective agent: file/git/search tools scoped to configured roots. \
-                 Tools: read_file (text/image/pdf via base64), write_file, edit_file (exact replace), \
-                 list_dir, stat, glob, grep, bash (requires allow_bash=true), git_status, git_diff. \
-                 ~ expands to $HOME / %USERPROFILE%."
+                "Local MCP agent: file/git/search/shell tools scoped to configured roots. \
+                 Deploy on the machine you want AI to control; connect from any MCP client over HTTP. \
+                 Tools: read_file, write_file, edit_file, list_dir, stat, glob, grep, \
+                 git_status, git_diff, bash (requires allow_bash=true), ping. \
+                 Paths must be absolute on this host; ~ expands to $HOME / %USERPROFILE%."
                     .to_string(),
             ),
             ..Default::default()

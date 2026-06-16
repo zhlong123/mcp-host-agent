@@ -1,120 +1,230 @@
 # 本机 MCP Agent
 
-在本机运行 **MCP（Model Context Protocol）服务**，供 Cursor、Claude Desktop 等 MCP 客户端通过 HTTP 调用：读改文件、搜索、Git、可选 Shell。带 Tauri 桌面控制面板与操作记录页。
+> **让 AI 优雅地「伸手」到另一台电脑——最轻量的远程 Agent 方案。**
 
-**License:** [MIT](LICENSE)
+你在 **A 电脑** 上跑 Cursor / Claude / 任意 MCP 客户端；在 **B 电脑** 上跑本 Agent。AI 通过标准 MCP 协议，直接在 B 上读代码、改文件、搜项目、看 Git、（可选）跑命令——**不需要** SSH 手工敲命令，不需要在 B 上再装一套 IDE，不需要把整台机器交给云端。
 
-## 环境要求
+一个 Rust 单文件服务 + 可选桌面面板。配置好沙箱目录，复制 MCP 地址，就能用。
 
-- Rust 1.75+
-- 桌面应用构建还需 Node.js 18+
+**License:** [MIT](LICENSE) · **仓库：** https://github.com/zhlong123/perspective-agent
 
-## 安装与运行
+---
 
-### 方式一：桌面应用（推荐）
+## 为什么用它
+
+| 对比 | 传统做法 | 本 Agent |
+|------|----------|----------|
+| 远程改代码 | SSH + vim / 远程桌面 | MCP 工具调用，AI 直接读写 |
+| 部署重量 | Docker、Node、Python 栈 | **纯 Rust 单 exe**，无运行时依赖 |
+| 协议 | 各客户端各搞一套 | **标准 MCP over HTTP**，Cursor 等即连即用 |
+| 安全 | 整机权限 | **沙箱 roots + 限额 + 可选 Token + Bash 默认关** |
+| 可观测 | 黑盒 | **操作记录流** + 审计日志，改了什么看得见 |
+
+**典型场景**
+
+- 笔记本跑 AI，台式机 / 服务器放代码和编译环境 → Agent 跑在代码那台机器上
+- 公司内网开发机，人在外网通过 VPN + Agent 远程协作
+- 多台电脑各跑一个 Agent，AI 按 URL 切换「手」伸到哪台
+
+---
+
+## 怎么工作（30 秒看懂）
+
+```
+┌─────────────────────┐          HTTP MCP           ┌──────────────────────────┐
+│  A：你的 AI 客户端   │  ────────────────────────▶  │  B：本机 MCP Agent        │
+│  Cursor / Claude…   │   http://B的IP:9876/mcp     │  perspective-agent-app    │
+└─────────────────────┘                               │  ├─ 沙箱内读/写/搜/Git     │
+                                                      │  ├─ 审计 + 操作记录        │
+                                                      │  └─ agent.toml 配置       │
+                                                      └──────────────────────────┘
+```
+
+AI 发出的每个动作（读文件、改一行、glob 搜索…）都是一次 MCP 工具调用；Agent 在 **B 电脑本地** 执行，结果回传给 A。
+
+---
+
+## Agent 需要做什么（部署清单）
+
+在 **要被 AI 控制的那台电脑（B）** 上，你需要完成下面全部事项：
+
+### 1. 安装并启动 Agent
+
+**推荐：桌面应用**
 
 ```bash
 git clone https://github.com/zhlong123/perspective-agent.git
 cd perspective-agent
 npm install
 npm run build:app
+# 运行 target/release/perspective-agent-app.exe
 ```
 
-产物：`target/release/perspective-agent-app.exe`（Windows）或对应平台的 app 二进制。
-
-启动后：
-
-1. 在控制面板配置 **沙箱目录**、端口、限额
-2. 点击 **保存配置** → **启动服务**（或 **重启**）
-3. 复制 **本机 MCP** 地址，填到 MCP 客户端
-
-### 方式二：仅 CLI 服务
+**或：仅 CLI（无界面）**
 
 ```bash
 cargo build --release
-cp agent.toml.example agent.toml   # 编辑 roots 与 limits
+cp agent.toml.example agent.toml
 ./target/release/perspective-agent --serve --config agent.toml
 ```
 
-健康检查：
+### 2. 配置沙箱目录 `[[roots]]`（必做）
 
-```bash
-curl http://127.0.0.1:9876/health
+在控制面板或 `agent.toml` 里声明 **允许 AI 访问的目录**：
+
+```toml
+[[roots]]
+name = "my-project"
+path = "D:/Projects/my-project"
 ```
 
-## 连接 MCP 客户端
+- 可配置多个 root，每个有名称
+- **留空 = 不限制路径**，仅适合完全可信的本机；LAN / 公网 **必须** 配置
+- 工具里的 `path` 必须是 **B 电脑上的绝对路径**（Windows 用 `D:/...` 或 `D:\...`）
 
-| 场景 | MCP 地址 |
-|------|----------|
-| 本机 | `http://127.0.0.1:9876/mcp` |
-| 局域网其他机器 | `http://<本机IP>:9876/mcp` |
-| 穿透/公网 | 隧道暴露后的 URL，并在 `agent.toml` 配置 `token` |
+### 3. 网络：让 A 能连到 B
 
-Windows 建议用 `127.0.0.1`，避免 `localhost` 走 IPv6 连不上。
+| 场景 | B 上怎么配 | A 填的 MCP 地址 |
+|------|------------|-----------------|
+| 同一台电脑 | 默认即可 | `http://127.0.0.1:9876/mcp` |
+| 局域网 | `bind = "0.0.0.0"`，防火墙放行 9876 | `http://<B的局域网IP>:9876/mcp` |
+| 跨网 / 公网 | frp、Tailscale、Cloudflare Tunnel 等暴露端口 | 隧道给出的 URL + **必须设 token** |
 
-在 MCP 客户端中添加 **Streamable HTTP** 类型的 MCP Server，填入上述地址。调用工具时使用 **本机绝对路径**（如 `D:/Projects/foo/src/main.rs`）。
+Windows 本机连接请用 `127.0.0.1`，不要用 `localhost`（可能走 IPv6 连失败）。
 
-## 配置（agent.toml）
-
-复制 `agent.toml.example` 为 `agent.toml`（与 exe 同目录或项目根），主要项：
+### 4. 安全项（按场景选做）
 
 ```toml
 port = 9876
-bind = "0.0.0.0"          # 仅本机用时改为 127.0.0.1
-# token = "随机长字符串"   # 穿透/公网时建议开启
+bind = "0.0.0.0"              # 仅本机时改为 127.0.0.1
+token = "足够长的随机字符串"    # 穿透/公网：强烈建议
+
+# allow_bash = true           # 默认 false；开启后 AI 可跑 Shell（高危）
+```
+
+- **Token**：客户端请求 `/mcp` 时需带 Bearer；不设则端口可达即可调用
+- **Bash**：默认关闭；只有你需要 AI 跑 `npm test`、`cargo build` 等才打开
+- **限额**：`[limits]` 控制单次读写大小、glob/grep 条数、bash 超时等（见 `agent.toml.example`）
+
+### 5. 在 A 电脑注册 MCP Server
+
+在 Cursor / Claude Desktop / 其他 MCP 客户端中：
+
+1. 添加 **Streamable HTTP** 类型 MCP
+2. URL 填上表中的地址（公网 URL 可写在 B 的 `public_mcp_url`，控制面板里一键复制）
+3. 若 B 配置了 `token`，在客户端填相同 Bearer Token
+
+### 6. 验证连通
+
+B 上访问：`http://127.0.0.1:9876/health` → 应返回 JSON `status: ok`
+
+或在 MCP 客户端里调用 `ping` 工具，应返回版本与 roots 列表。
+
+### 7. 改配置后重启
+
+控制面板点 **重启**，或 CLI 重启 `--serve` 进程。保存 `agent.toml` 不会自动热加载。
+
+---
+
+## Agent 提供的能力（11 个 MCP 工具）
+
+Agent **负责在 B 电脑上执行** 下列操作；AI 客户端 **负责** 决定何时调用、传什么参数。
+
+| 工具 | Agent 做什么 | 典型用途 |
+|------|--------------|----------|
+| `read_file` | 读文件，文本可带行号；二进制 base64 | AI 看源码、配置、图片/PDF |
+| `write_file` | 整文件新建或覆盖 | 生成新文件、大段重写 |
+| `edit_file` | 精确字符串替换（须 UTF-8 文本） | 改几行代码，比整文件写更安全 |
+| `list_dir` | 列目录，可递归 | 看项目结构 |
+| `stat` | 文件是否存在、大小、修改时间 | 判断路径、查元信息 |
+| `glob` | 按文件名模式找路径（不读内容） | `**/*.rs` 找所有 Rust 文件 |
+| `grep` | 正则搜文件内容 | 找符号、搜关键字 |
+| `git_status` | 分支、脏工作区、ahead/behind | AI 知道 Git 状态再改代码 |
+| `git_diff` | 输出 diff，可看 staged | 改完自查 |
+| `bash` | 在指定 cwd 跑 Shell（**需 `allow_bash=true`**） | 编译、测试、装依赖 |
+| `ping` | 返回版本、roots、Git 是否可用 | 连通性自检 |
+
+**Agent 不做的事：**
+
+- 不替 AI 做推理或规划（那是客户端的事）
+- 不自动扫描全盘（只在 `roots` 内响应）
+- 默认不执行 Shell（除非你显式开启）
+- 不提供 GUI 给 AI 点按（浏览器打开 `/` 只是说明页；管理用桌面 app）
+
+---
+
+## 桌面应用（B 电脑上）
+
+| 页面 | 作用 |
+|------|------|
+| **控制面板** | 启停/重启 MCP、端口与 Token、沙箱目录、读写/Glob/Grep/Bash 限额、复制 MCP 地址 |
+| **操作记录** | 实时流式查看 AI 每次调用了什么工具、改了哪些文件、diff 与命令输出 |
+
+MCP 服务内嵌在桌面进程里，**不必** 再单独开一个 `perspective-agent.exe` 黑窗口。
+
+---
+
+## 配置参考（agent.toml）
+
+```toml
+port = 9876
+bind = "0.0.0.0"
+# token = "..."
+# public_mcp_url = "http://your-tunnel.example.com/mcp"  # 控制面板展示用
 
 [limits]
 max_read_bytes = 10485760
 max_write_bytes = 10485760
-# … 见 agent.toml.example
-
-# allow_bash = true        # 默认关闭，开启后可跑 shell
+max_glob_results = 500
+max_grep_matches = 200
+max_bash_output_bytes = 1048576
+bash_timeout_secs = 30
 
 [[roots]]
 name = "my-project"
 path = "D:/Projects/my-project"
 ```
 
-- **roots**：只允许访问列出的目录；留空则不限路径（公网场景危险）
-- 修改配置后需 **重启 MCP** 生效
+完整字段见 [agent.toml.example](agent.toml.example)。图形界面与文件二选一编辑即可。
 
-也可在桌面 **控制面板** 图形编辑并保存。
+---
 
-## MCP 工具
+## 构建要求
 
-| 工具 | 说明 |
+| 用途 | 需要 |
 |------|------|
-| `read_file` | 读文件（支持文本行号） |
-| `write_file` | 新建/覆盖文件 |
-| `edit_file` | 字符串精准替换 |
-| `list_dir` | 列目录（可递归） |
-| `stat` | 文件元信息 |
-| `glob` | 按文件名模式搜索 |
-| `grep` | 正则搜索文件内容 |
-| `git_status` | Git 状态 |
-| `git_diff` | Git diff |
-| `bash` | 执行 Shell（需 `allow_bash = true`） |
-| `ping` | 连通性与沙箱探测 |
+| 跑 release 二进制 | Rust 1.75+ |
+| 构建桌面 app | 上述 + Node.js 18+ |
 
-## 桌面应用
+```bash
+npm run build:app     # 桌面应用
+cargo build --release # 仅 CLI 服务
+```
 
-| 页面 | 功能 |
-|------|------|
-| 控制面板 | 启停/重启 MCP、网络与限额、沙箱目录、保存配置 |
-| 操作记录 | 流式查看每次工具调用、diff 与输出预览 |
+---
+
+## 安全提醒
+
+Agent 等于 **B 电脑上的特权代理**。公网或多人环境务必：
+
+1. 配置 `[[roots]]`，不要裸奔全盘  
+2. 设置强 `token` + 隧道层鉴权  
+3. 非必要不开 `allow_bash`  
+4. 定期看 **操作记录** 与审计日志  
+
+详见 [SECURITY.md](SECURITY.md)。
+
+---
 
 ## 开发
 
 ```bash
-npm run tauri dev      # 桌面应用热重载
-cargo test             # Rust 单元测试
-npm run build:ui       # 仅构建前端
+npm run tauri dev
+cargo test
 ```
 
-## 安全
+---
 
-详见 [SECURITY.md](SECURITY.md)。公网暴露务必配置 `token` 与 `[[roots]]`，默认不要开启 `allow_bash`。
-
-## 问题反馈
+## 反馈
 
 https://github.com/zhlong123/perspective-agent/issues
