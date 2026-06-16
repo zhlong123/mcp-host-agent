@@ -1,5 +1,12 @@
 # Perspective Agent configuration
 # Copy to agent.toml (same dir as exe or project root) or pass --config agent.toml
+#
+# Desktop management (recommended):
+#   npm run tauri dev          # development
+#   npx tauri build            # release → target/release/perspective-agent-app.exe
+#
+# MCP server only (CLI / sidecar):
+#   perspective-agent.exe --serve --config agent.toml
 
 port = 9876
 bind = "0.0.0.0"

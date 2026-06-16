@@ -1,8 +1,8 @@
 use anyhow::{Context, Result, bail};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LimitsConfig {
     #[serde(default = "default_max_read_bytes")]
     pub max_read_bytes: usize,
@@ -44,13 +44,13 @@ fn default_max_git_diff_bytes() -> usize {
     1024 * 1024
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RootEntry {
     pub name: String,
     pub path: PathBuf,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileConfig {
     #[serde(default = "default_port")]
     pub port: u16,
@@ -86,7 +86,7 @@ impl Default for FileConfig {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RuntimeConfig {
     pub port: u16,
     pub bind: String,
@@ -180,9 +180,44 @@ fn load_file(path: impl AsRef<Path>) -> Result<FileConfig> {
     toml::from_str(&text).context("parse agent.toml")
 }
 
+pub fn default_config_path() -> PathBuf {
+    if Path::new("agent.toml").exists() {
+        PathBuf::from("agent.toml")
+    } else if let Ok(exe) = std::env::current_exe() {
+        exe.parent()
+            .map(|d| d.join("agent.toml"))
+            .unwrap_or_else(|| PathBuf::from("agent.toml"))
+    } else {
+        PathBuf::from("agent.toml")
+    }
+}
+
+pub fn save_config(path: &Path, cfg: &RuntimeConfig) -> Result<()> {
+    let file = FileConfig {
+        port: cfg.port,
+        bind: cfg.bind.clone(),
+        token: cfg.token.clone(),
+        audit_log: cfg.audit_log.clone(),
+        limits: cfg.limits.clone(),
+        roots: cfg.roots.clone(),
+    };
+    let text = toml::to_string_pretty(&file).context("serialize agent.toml")?;
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
+        }
+    }
+    std::fs::write(path, text).with_context(|| format!("write {}", path.display()))?;
+    Ok(())
+}
+
 #[derive(Debug, Clone, clap::Parser)]
 #[command(name = "perspective-agent", about = "Perspective local MCP agent")]
 pub struct CliArgs {
+    /// Run MCP HTTP server (used by Tauri sidecar; default when no flag is set)
+    #[arg(long)]
+    pub serve: bool,
+
     /// Path to agent.toml
     #[arg(long, value_name = "FILE")]
     pub config: Option<PathBuf>,
@@ -212,6 +247,17 @@ fn parse_root_arg(s: &str) -> Result<RootEntry, String> {
     Ok(RootEntry {
         name: name.to_string(),
         path: PathBuf::from(path),
+    })
+}
+
+pub fn load_config_default() -> Result<RuntimeConfig> {
+    load_config(&CliArgs {
+        serve: false,
+        config: None,
+        port: None,
+        bind: None,
+        token: None,
+        roots: vec![],
     })
 }
 

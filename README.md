@@ -32,6 +32,16 @@ cargo build --release --target x86_64-pc-windows-gnu
 
 产物在 `target/<target-triple>/release/perspective-agent[.exe]`,**纯 Rust 单文件,无 Python / Node / DLL 依赖**。
 
+### 桌面管理界面 (Tauri)
+
+图形界面用于配置 roots、启停 MCP、查看审计日志; MCP 服务仍由 `perspective-agent.exe --serve` sidecar 提供。
+
+```bash
+npm install
+npm run tauri dev      # 开发
+npx tauri build        # 产物: target/release/perspective-agent-app.exe
+```
+
 ## 装/跑
 
 直接运行二进制:

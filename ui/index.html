@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perspective Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Perspective Agent</h1>
+          <p>本机 MCP 服务 · 项目管理与穿透配置</p>
+        </div>
+        <div class="badge" id="statusBadge">
+          <span class="dot" id="statusDot"></span>
+          <span id="statusText">检测中…</span>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <h2>连接</h2>
+          <label>MCP 地址（Perspective 远端 Agent URL）</label>
+          <div class="url-box" id="mcpUrl" title="点击复制">—</div>
+          <label>健康检查</label>
+          <div class="url-box mono" id="healthUrl">—</div>
+          <p class="hint" id="statusDetail"></p>
+          <div class="btns">
+            <button class="btn primary" id="btnStart">启动服务</button>
+            <button class="btn danger" id="btnStop">停止服务</button>
+            <button class="btn secondary" id="btnRefresh">刷新</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>网络</h2>
+          <div class="field">
+            <label>端口</label>
+            <input id="port" type="number" min="1" max="65535" />
+          </div>
+          <div class="field">
+            <label>绑定地址</label>
+            <input id="bind" placeholder="0.0.0.0" />
+          </div>
+          <div class="field">
+            <label>Bearer Token（留空=不鉴权）</label>
+            <input id="token" type="password" placeholder="可选" autocomplete="off" />
+          </div>
+        </section>
+
+        <section class="card full">
+          <h2>允许的项目目录（沙箱）</h2>
+          <div class="roots-list" id="rootsList"></div>
+          <div class="btns">
+            <button class="btn secondary" id="btnAddRoot">+ 添加目录</button>
+            <button class="btn primary" id="btnSave">保存配置</button>
+          </div>
+          <p class="hint">配置文件：<span id="configPath">—</span></p>
+        </section>
+
+        <section class="card full">
+          <h2>审计日志</h2>
+          <pre class="log" id="auditLog">加载中…</pre>
+        </section>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
