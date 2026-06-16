@@ -2,7 +2,7 @@
 
 Local-first **MCP (Model Context Protocol) server** for AI coding agents: sandboxed file I/O, search, Git, and optional shell — with a Tauri desktop control panel and activity stream.
 
-Works standalone with any MCP client over HTTP. Originally extracted from the [Perspective](https://github.com/zhlong/perspective) monorepo as an independent agent crate.
+Works standalone with any MCP client over HTTP. Originally extracted from the Perspective monorepo as an independent agent crate.
 
 **License:** [MIT](LICENSE)
 
@@ -91,7 +91,7 @@ Copy `agent.toml.example` → `agent.toml` (next to the binary or project root).
 
 ## Perspective integration
 
-When used with [Perspective](https://github.com/zhlong/perspective), the server talks to this agent via MCP JSON-RPC. Core tool names/schemas for `read_file`, `write_file`, `list_dir`, and `git_status` are the stable contract; extended tools (`edit_file`, `glob`, `grep`, `bash`) are agent-side utilities.
+When used with Perspective, the server talks to this agent via MCP JSON-RPC. Core tool names/schemas for `read_file`, `write_file`, `list_dir`, and `git_status` are the stable contract; extended tools (`edit_file`, `glob`, `grep`, `bash`) are agent-side utilities.
 
 Project paths may use `agent://<name>/C:/path/to/project` URIs when configured in Perspective.
 

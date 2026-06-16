@@ -11,4 +11,4 @@ Perspective Agent exposes **local file and optional shell access** to MCP client
 
 ## Reporting
 
-Open a [GitHub Issue](https://github.com/zhlong/perspective-agent/issues) with **Security** in the title for vulnerabilities. Do not publish exploit details before a fix is available.
+Open a [GitHub Issue](https://github.com/zhlong123/perspective-agent/issues) with **Security** in the title for vulnerabilities. Do not publish exploit details before a fix is available.
