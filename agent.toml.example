@@ -1,0 +1,28 @@
+# Perspective Agent configuration
+# Copy to agent.toml (same dir as exe or project root) or pass --config agent.toml
+
+port = 9876
+bind = "0.0.0.0"
+
+# Optional Bearer token for /mcp (recommended when using tunnel/public exposure)
+# token = "change-me-to-a-long-random-string"
+
+# Audit log path (default: perspective-agent-audit.log next to exe)
+# audit_log = "perspective-agent-audit.log"
+
+[limits]
+max_read_bytes = 10485760      # 10 MiB
+max_write_bytes = 10485760     # 10 MiB
+max_list_entries = 10000
+max_list_depth = 10
+max_git_diff_bytes = 1048576   # 1 MiB
+
+# Path sandbox: only paths under these roots are allowed.
+# If empty, all paths are allowed (unsafe for tunnel).
+[[roots]]
+name = "perspective-agent"
+path = "D:/Preoject/pulic/perspective-agent"
+
+# [[roots]]
+# name = "another-project"
+# path = "D:/Projects/another"

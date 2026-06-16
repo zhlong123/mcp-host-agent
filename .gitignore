@@ -11,3 +11,4 @@
 # 本地 build artifacts
 *.log
 panic-*.log
+agent.toml
