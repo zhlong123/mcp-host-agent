@@ -1,6 +1,6 @@
 [package]
 name = "mcp-host-agent-app"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP Host Agent desktop manager"
 authors = ["zhlong"]
 edition = "2021"

@@ -6,7 +6,16 @@
 
 一个 Rust 单文件服务 + 可选桌面面板。配置好沙箱目录，复制 MCP 地址，就能用。
 
-**License:** [MIT](LICENSE) · **仓库：** https://github.com/zhlong123/mcp-host-agent
+**License:** [MIT](LICENSE)
+
+**仓库：**
+
+| 来源 | 地址 |
+|------|------|
+| GitHub（主仓库） | https://github.com/zhlong123/mcp-host-agent |
+| Gitea（自建镜像） | http://103.40.14.91:28929/zhlong/mcp-host-agent |
+
+> **从 `perspective-agent` 迁移：** 项目已更名为 **mcp-host-agent**。旧仓库 [zhlong/perspective-agent](http://103.40.14.91:28929/zhlong/perspective-agent) 不再更新，请 clone / star 新地址；已有 clone 可 `git remote set-url origin http://103.40.14.91:28929/zhlong/mcp-host-agent.git` 后 `git pull`。
 
 ---
 
@@ -244,10 +253,12 @@ Agent **负责在 B 电脑上执行** 下列操作；AI 客户端 **负责** 决
 
 | 页面 | 作用 |
 |------|------|
-| **控制面板** | 启停/重启 MCP、端口与 Token、沙箱目录、读写/Glob/Grep/Bash 限额、复制 MCP 地址 |
+| **控制面板** | 启停/重启 MCP、端口与 Token、沙箱目录、读写/Glob/Grep/Bash 限额、复制 MCP 地址、**Cloudflare 临时隧道**（一键公网 MCP） |
 | **操作记录** | 实时流式查看 AI 每次调用了什么工具、改了哪些文件、diff 与命令输出 |
 
-MCP 服务内嵌在桌面进程里，**不必** 再单独开一个 `mcp-host-agent.exe` 黑窗口。
+**Cloudflare 临时隧道（Quick Tunnel）：** 控制面板 → 网络 →「启动隧道」。需先启动 MCP、设置 **Bearer Token** 与 **沙箱 roots**；优先使用本机 `cloudflared`（WinGet 或自动下载）。公网 URL 每次重启会变，适合临时联调，生产环境请用 Tailscale / 自有域名隧道。
+
+MCP 服务内嵌在桌面进程里，**不必** 再单独开一个 `mcp-host-agent.exe` 黑窗口。图形界面请运行 **`mcp-host-agent-app.exe`** 或项目根目录 **`启动 MCP Host Agent.bat`**，勿在浏览器打开 `localhost:1420`。
 
 ---
 
@@ -314,4 +325,5 @@ cargo test
 
 ## 反馈
 
-https://github.com/zhlong123/mcp-host-agent/issues
+- GitHub Issues：https://github.com/zhlong123/mcp-host-agent/issues
+- Gitea（自建）：http://103.40.14.91:28929/zhlong/mcp-host-agent/issues
