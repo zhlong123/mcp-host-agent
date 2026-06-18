@@ -1,4 +1,4 @@
-use crate::{restart_mcp_server, stop_mcp_server, spawn_mcp_server, AppState};
+use crate::{restart_mcp_server, stop_mcp_server, spawn_mcp_server, tunnel, AppState};
 use mcp_host_agent::activity::{ActivityEvent, ActivityQuery};
 use mcp_host_agent::config::RuntimeConfig;
 use mcp_host_agent::manager::StatusResponse;
@@ -41,6 +41,7 @@ pub fn start_server(state: State<'_, Arc<AppState>>) -> Result<String, String> {
 
 #[tauri::command]
 pub fn stop_server(state: State<'_, Arc<AppState>>) -> Result<String, String> {
+    let _ = state.tunnel.stop();
     stop_mcp_server(&state)
 }
 
@@ -66,4 +67,19 @@ pub async fn get_activity_events(
 pub async fn pick_folder(app: tauri::AppHandle) -> Result<Option<String>, String> {
     let picked = app.dialog().file().blocking_pick_folder();
     Ok(picked.map(|p| p.to_string()))
+}
+
+#[tauri::command]
+pub fn get_tunnel_status(state: State<Arc<AppState>>) -> tunnel::TunnelStatusResponse {
+    state.tunnel.status()
+}
+
+#[tauri::command]
+pub fn start_quick_tunnel(state: State<'_, Arc<AppState>>) -> Result<String, String> {
+    Arc::clone(&state.tunnel).start(&state.manager)
+}
+
+#[tauri::command]
+pub fn stop_quick_tunnel(state: State<'_, Arc<AppState>>) -> Result<String, String> {
+    state.tunnel.stop()
 }

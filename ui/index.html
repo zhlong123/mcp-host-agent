@@ -45,6 +45,7 @@
           <button class="btn btn-ghost" id="btnRefresh">刷新</button>
         </div>
         <p class="callout">MCP 内嵌在本进程，无需单独运行 mcp-host-agent.exe</p>
+        <p class="callout callout-warn">控制面板仅限本窗口；勿在浏览器打开 <code>localhost:1420</code>。探活用 <code>127.0.0.1:9876/health</code>。</p>
       </section>
 
       <main class="layout">
@@ -100,6 +101,18 @@
               <span class="field-label">穿透 / 公网 MCP</span>
               <input id="publicMcpUrl" placeholder="http://your-host:9876/mcp" />
             </label>
+            <div class="tunnel-box field-span-2">
+              <div class="tunnel-head">
+                <span class="field-label">Cloudflare 临时隧道</span>
+                <span class="tunnel-badge" id="tunnelBadge">未启动</span>
+              </div>
+              <p class="tunnel-hint">无需账号 · 优先使用本机 cloudflared · 不可用时自动下载 · 重启后 URL 会变</p>
+              <p class="tunnel-status" id="tunnelStatus">—</p>
+              <div class="tunnel-actions">
+                <button class="btn btn-outline btn-sm" id="btnTunnelStart" type="button">启动隧道</button>
+                <button class="btn btn-ghost btn-sm" id="btnTunnelStop" type="button">停止隧道</button>
+              </div>
+            </div>
             <label class="field field-span-2">
               <span class="field-label">审计日志路径</span>
               <input id="auditLogPath" placeholder="mcp-host-agent-audit.log" />

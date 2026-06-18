@@ -20,4 +20,6 @@ tokio = { workspace = true, features = ["sync"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
+minreq = { workspace = true, features = ["https"] }
 parking_lot = "0.12"
+which = { workspace = true }

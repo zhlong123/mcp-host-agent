@@ -8,6 +8,7 @@
     "build:server": "cargo build --release -p mcp-host-agent && node scripts/copy-server.js",
     "build": "npm run build:server && npm run build:ui",
     "build:app": "tauri build --no-bundle",
+    "start:app": "target/release/mcp-host-agent-app.exe",
     "predev": "npm run build:server"
   },
   "dependencies": {

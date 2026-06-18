@@ -4,8 +4,7 @@
   "version": "0.1.0",
   "identifier": "dev.mcphost.agent",
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run build:ui",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../ui/dist"
   },

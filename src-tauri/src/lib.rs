@@ -1,4 +1,5 @@
 mod commands;
+mod tunnel;
 
 use mcp_host_agent::activity::{ActivityLog, default_activity_log_path};
 use mcp_host_agent::config::{default_config_path, load_config_default, CliArgs};
@@ -12,6 +13,7 @@ use tokio::sync::watch;
 pub struct AppState {
     pub manager: AgentManager,
     pub activity: Arc<ActivityLog>,
+    pub tunnel: Arc<tunnel::QuickTunnel>,
     server_stop: Mutex<Option<watch::Sender<()>>>,
 }
 
@@ -106,6 +108,7 @@ pub fn run() {
             let state = Arc::new(AppState {
                 manager,
                 activity,
+                tunnel: Arc::new(tunnel::QuickTunnel::new()),
                 server_stop: Mutex::new(None),
             });
             app.manage(Arc::clone(&state));
@@ -124,7 +127,17 @@ pub fn run() {
             commands::get_audit_logs,
             commands::get_activity_events,
             commands::pick_folder,
+            commands::get_tunnel_status,
+            commands::start_quick_tunnel,
+            commands::stop_quick_tunnel,
         ])
-        .run(tauri::generate_context!())
-        .expect("tauri run failed");
+        .build(tauri::generate_context!())
+        .expect("tauri build failed")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                if let Some(state) = app.try_state::<Arc<AppState>>() {
+                    let _ = state.tunnel.stop();
+                }
+            }
+        })
 }

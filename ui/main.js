@@ -154,6 +154,29 @@ async function loadConfig() {
   return c;
 }
 
+async function refreshTunnel() {
+  try {
+    const t = await invoke("get_tunnel_status");
+    const badge = document.getElementById("tunnelBadge");
+    const status = document.getElementById("tunnelStatus");
+    const phaseLabel = {
+      idle: "未启动",
+      starting: "连接中",
+      running: "已连接",
+      error: "失败",
+    };
+    badge.textContent = phaseLabel[t.phase] || t.phase;
+    badge.classList.toggle("ok", t.phase === "running");
+    badge.classList.toggle("err", t.phase === "error");
+    status.textContent = t.mcp_url || t.message || "—";
+    if (t.phase === "running" && t.mcp_url) {
+      document.getElementById("publicMcpUrl").value = t.mcp_url;
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 async function refresh() {
   try {
     const s = await invoke("get_status");
@@ -177,6 +200,7 @@ async function refresh() {
   } catch (e) {
     toast("刷新失败: " + e);
   }
+  await refreshTunnel();
 }
 
 async function saveConfig() {
@@ -238,6 +262,37 @@ document.getElementById("btnAddRoot").onclick = () => {
   collectRoots();
   roots.push({ name: "project" + (roots.length + 1), path: "" });
   renderRoots();
+};
+
+document.getElementById("btnTunnelStart").onclick = async () => {
+  const btn = document.getElementById("btnTunnelStart");
+  btn.disabled = true;
+  try {
+    collectRoots();
+    const c = await invoke("get_config");
+    await invoke("save_config", { config: collectConfig(c) });
+    const msg = await invoke("start_quick_tunnel");
+    toast(msg);
+    setTimeout(async () => {
+      await refresh();
+      await loadConfig();
+    }, 800);
+  } catch (e) {
+    toast(String(e));
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+document.getElementById("btnTunnelStop").onclick = async () => {
+  try {
+    const msg = await invoke("stop_quick_tunnel");
+    toast(msg);
+    await refresh();
+    await refreshTunnel();
+  } catch (e) {
+    toast(String(e));
+  }
 };
 
 loadConfig().then(refresh);

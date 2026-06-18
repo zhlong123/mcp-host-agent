@@ -21,7 +21,8 @@ bind = "0.0.0.0"
 # activity_log = "mcp-host-agent-activity.jsonl"
 
 # Public/tunnel MCP URL shown in desktop app (optional display copy)
-# public_mcp_url = "http://your-host:9876/mcp"
+# Quick Tunnel: use control panel「启动隧道」to auto-fill trycloudflare.com URL
+# public_mcp_url = "https://xxx.trycloudflare.com/mcp"
 
 [limits]
 # All byte limits are in bytes; desktop app edits them as MiB.
