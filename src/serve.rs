@@ -106,8 +106,8 @@ impl ServerHandler for Agent {
             instructions: Some(
                 "Local MCP agent: file/git/search/shell tools scoped to configured roots. \
                  Deploy on the machine you want AI to control; connect from any MCP client over HTTP. \
-                 Tools: read_file, write_file, edit_file, list_dir, stat, glob, grep, \
-                 git_status, git_diff, bash (requires allow_bash=true), ping. \
+                 Tools: read_file, write_file, edit_file, delete_file, list_dir, stat, glob, \
+                 grep, git_status, git_diff, bash (requires allow_bash=true), ping. \
                  Paths must be absolute on this host; ~ expands to $HOME / %USERPROFILE%."
                     .to_string(),
             ),
@@ -156,6 +156,16 @@ struct EditFileArgs {
 struct EditFileOutput {
     replacements: u32,
     bytes_written: usize,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct DeleteFileArgs {
+    path: String,
+}
+
+#[derive(Debug, Serialize, JsonSchema)]
+struct DeleteFileOutput {
+    deleted: bool,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -815,6 +825,32 @@ impl Agent {
         )
         .await;
         Ok(json)
+    }
+
+    #[tool(name = "delete_file", description = "Delete a file (not directories)")]
+    async fn delete_file(
+        &self,
+        Parameters(args): Parameters<DeleteFileArgs>,
+    ) -> Result<String, ErrorData> {
+        let path = self.resolve_path("delete_file", &args.path).await?;
+        let rec = self.record("delete_file", &path, OpKind::Modify);
+        let meta = tokio::fs::metadata(&path).await
+            .map_err(|e| mcp_err(-32001, format!("stat {} failed: {e}", path.display())))?;
+        if meta.is_dir() {
+            rec.err("cannot delete directory").await;
+            return Err(mcp_err(-32002, "cannot delete directory, use bash rm -r instead"));
+        }
+        tokio::fs::remove_file(&path).await
+            .map_err(|e| mcp_err(-32003, format!("delete {} failed: {e}", path.display())))?;
+        rec.ok(
+            format!("deleted {}", path.display()),
+            ActivityDetail {
+                result_json: Some(serde_json::to_string(&DeleteFileOutput { deleted: true }).unwrap_or_default()),
+                ..Default::default()
+            },
+        )
+        .await;
+        Ok(serde_json::to_string(&DeleteFileOutput { deleted: true }).unwrap_or_default())
     }
 
     #[tool(
