@@ -6,16 +6,9 @@
 
 一个 Rust 单文件服务 + 可选桌面面板。配置好沙箱目录，复制 MCP 地址，就能用。
 
-**License:** [MIT](LICENSE)
+**License:** [MIT](LICENSE) · **仓库：** https://github.com/zhlong123/mcp-host-agent
 
-**仓库：**
-
-| 来源 | 地址 |
-|------|------|
-| GitHub（主仓库） | https://github.com/zhlong123/mcp-host-agent |
-| Gitea（自建镜像） | http://103.40.14.91:28929/zhlong/mcp-host-agent |
-
-> **从 `perspective-agent` 迁移：** 项目已更名为 **mcp-host-agent**。旧仓库 [zhlong/perspective-agent](http://103.40.14.91:28929/zhlong/perspective-agent) 不再更新，请 clone / star 新地址；已有 clone 可 `git remote set-url origin http://103.40.14.91:28929/zhlong/mcp-host-agent.git` 后 `git pull`。
+> **更名说明：** 早期仓库名曾为 `perspective-agent`，现统一为 **mcp-host-agent**。请使用上方 GitHub 地址 clone 与提 Issue。
 
 ---
 
@@ -325,5 +318,4 @@ cargo test
 
 ## 反馈
 
-- GitHub Issues：https://github.com/zhlong123/mcp-host-agent/issues
-- Gitea（自建）：http://103.40.14.91:28929/zhlong/mcp-host-agent/issues
+https://github.com/zhlong123/mcp-host-agent/issues

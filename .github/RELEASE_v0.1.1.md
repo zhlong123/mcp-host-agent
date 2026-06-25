@@ -24,6 +24,5 @@ Cloudflare 临时隧道 + 桌面 UI 稳定性修复。
 ### 仓库
 
 - GitHub：https://github.com/zhlong123/mcp-host-agent
-- Gitea：http://103.40.14.91:28929/zhlong/mcp-host-agent
 
-旧名 `perspective-agent` 仓库已归档，请迁移至 `mcp-host-agent`。
+旧名 `perspective-agent` 已弃用，请使用 `mcp-host-agent`。
