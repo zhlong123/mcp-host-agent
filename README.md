@@ -6,10 +6,6 @@
 
 一个 Rust 单文件服务 + 可选桌面面板。配置好沙箱目录，复制 MCP 地址，就能用。
 
-**License:** [MIT](LICENSE) · **仓库：** https://github.com/zhlong123/mcp-host-agent
-
-> **更名说明：** 早期仓库名曾为 `perspective-agent`，现统一为 **mcp-host-agent**。请使用上方 GitHub 地址 clone 与提 Issue。
-
 ---
 
 ## 为什么用它
@@ -251,7 +247,7 @@ Agent **负责在 B 电脑上执行** 下列操作；AI 客户端 **负责** 决
 
 **Cloudflare 临时隧道（Quick Tunnel）：** 控制面板 → 网络 →「启动隧道」。需先启动 MCP、设置 **Bearer Token** 与 **沙箱 roots**；优先使用本机 `cloudflared`（WinGet 或自动下载）。公网 URL 每次重启会变，适合临时联调，生产环境请用 Tailscale / 自有域名隧道。
 
-MCP 服务内嵌在桌面进程里，**不必** 再单独开一个 `mcp-host-agent.exe` 黑窗口。图形界面请运行 **`mcp-host-agent-app.exe`** 或项目根目录 **`启动 MCP Host Agent.bat`**，勿在浏览器打开 `localhost:1420`。
+MCP 服务内嵌在桌面进程里，**不必** 再单独开一个 `mcp-host-agent.exe` 黑窗口。
 
 ---
 
@@ -313,9 +309,3 @@ Agent 等于 **B 电脑上的特权代理**。公网或多人环境务必：
 npm run tauri dev
 cargo test
 ```
-
----
-
-## 反馈
-
-https://github.com/zhlong123/mcp-host-agent/issues
